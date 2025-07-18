@@ -432,11 +432,20 @@ Select an option:
             for idx in selected_indices:
                 if 1 <= idx <= len(modules_list):
                     module_name = modules_list[idx - 1][0]
-                    selected_modules.append(module_name)
+                    # Ensure module name is a string
+                    if isinstance(module_name, str):
+                        selected_modules.append(module_name)
+                    else:
+                        console.print(f"[yellow]Warning: Invalid module type for ID {idx} ignored[/yellow]")
                 else:
                     console.print(f"[yellow]Warning: Invalid module ID {idx} ignored[/yellow]")
                     
-            return selected_modules if selected_modules else ['port_scanner', 'vulnerability_scanner']
+            # Ensure we have at least some modules and they are all strings
+            if selected_modules and all(isinstance(m, str) for m in selected_modules):
+                return selected_modules
+            else:
+                console.print("[red]No valid modules selected, using default modules[/red]")
+                return ['port_scanner', 'vulnerability_scanner']
             
         except ValueError:
             console.print("[red]Invalid selection, using default modules[/red]")
@@ -821,9 +830,12 @@ Ensure you have permission before scanning systems.
         self.scan_in_progress = True
         self.scan_paused = False
         
+        # Ensure modules are strings (defensive programming)
+        modules = [str(m) for m in modules]
+        
         console.print(f"\n[bold green]🔍 Starting Scan[/bold green]")
         console.print(f"[blue]Targets: {', '.join(targets)}[/blue]")
-        console.print(f"[blue]Modules: {', '.join(modules)}[/blue]")
+        console.print(f"[blue]Modules: {', '.join(str(m) for m in modules)}[/blue]")
         console.print(f"[yellow]Keyboard Shortcuts: Ctrl+C = Stop, Ctrl+Z = Pause/Resume[/yellow]")
         
         # Initialize scanner
