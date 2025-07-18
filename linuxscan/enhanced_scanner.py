@@ -49,6 +49,7 @@ try:
     from .modules.malware_scanner import MalwareScanner
     from .modules.database_scanner import DatabaseScanner
     from .modules.ssh_scanner import SSHScanner
+    from .modules.system_check import SystemCheckModule
     from .modules.base_scanner import scanner_registry
 except ImportError:
     # Fallback for direct execution
@@ -63,6 +64,7 @@ except ImportError:
     from modules.malware_scanner import MalwareScanner
     from modules.database_scanner import DatabaseScanner
     from modules.ssh_scanner import SSHScanner
+    from modules.system_check import SystemCheckModule
     from modules.base_scanner import scanner_registry
 
 # Console instance for rich output
@@ -119,6 +121,7 @@ class SecurityScanner:
         self.malware_scanner = MalwareScanner(timeout=timeout)
         self.database_scanner = DatabaseScanner(timeout=timeout)
         self.ssh_scanner = SSHScanner(timeout=timeout)
+        self.system_check = SystemCheckModule()
         
         # Register scanners
         scanner_registry.register('port_scanner', PortScanner)
@@ -130,6 +133,7 @@ class SecurityScanner:
         scanner_registry.register('malware_scanner', MalwareScanner)
         scanner_registry.register('database_scanner', DatabaseScanner)
         scanner_registry.register('ssh_scanner', SSHScanner)
+        scanner_registry.register('system_check', SystemCheckModule)
         
     def parse_targets(self, targets: List[str]) -> List[str]:
         """Parse and validate target list"""

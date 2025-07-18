@@ -42,7 +42,8 @@ SCAN_MODULES = {
     'malware_scanner': 'Malware detection and analysis',
     'database_scanner': 'Database security assessment',
     'forensics_scanner': 'Digital forensics and analysis',
-    'ssh_scanner': 'SSH security testing and red team assessment'
+    'ssh_scanner': 'SSH security testing and red team assessment',
+    'system_check': 'System dependency and component verification'
 }
 
 # Output formats
@@ -208,7 +209,7 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
 
 
 @click.command()
-@click.argument('targets', required=True)
+@click.argument('targets', required=False)
 @click.option('--modules', '-m', default='port_scanner,vulnerability_scanner',
               help='Comma-separated list of scan modules to use (or "all")')
 @click.option('--timeout', '-t', default=5, type=int,
@@ -238,6 +239,10 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
               help='List available scan modules')
 @click.option('--help-extended', is_flag=True,
               help='Show extended help with examples')
+@click.option('--system-check', is_flag=True,
+              help='Run system dependency check')
+@click.option('--auto-install', is_flag=True,
+              help='Automatically install missing dependencies')
 @click.option('--ssh-brute-force', is_flag=True,
               help='Enable SSH brute force testing (red team mode)')
 @click.option('--ssh-usernames', type=str, 
@@ -252,10 +257,11 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
               help='Enable SSH configuration audit (requires credentials)')
 @click.option('--ssh-credentials', type=str,
               help='SSH credentials in format "username:password" for config audit')
-def main(targets: str, modules: str, timeout: int, max_workers: int,
+def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
          output: Optional[str], output_format: str, config: Optional[str],
          compliance: Optional[str], verbose: bool, quiet: bool, details: bool,
          interactive: bool, version: bool, list_modules: bool, help_extended: bool,
+         system_check: bool, auto_install: bool,
          ssh_brute_force: bool, ssh_usernames: Optional[str], ssh_passwords: Optional[str],
          ssh_max_attempts: int, ssh_delay: float, ssh_config_audit: bool,
          ssh_credentials: Optional[str]):
@@ -263,11 +269,14 @@ def main(targets: str, modules: str, timeout: int, max_workers: int,
     LinuxScan - Comprehensive Linux Security Scanner
     
     TARGETS: IP addresses, CIDR ranges, or hostnames (comma-separated)
+    Optional when using --system-check, --version, --list-modules, or --help-extended
     
     Examples:
         linuxscan 192.168.1.1
         linuxscan 192.168.1.0/24 --modules all
         linuxscan example.com --output report.json
+        linuxscan --system-check
+        linuxscan --system-check --auto-install
     """
     
     # Handle special options
@@ -285,9 +294,46 @@ def main(targets: str, modules: str, timeout: int, max_workers: int,
         display_help()
         return
     
+    # Handle system check
+    if system_check:
+        from .modules.system_check import SystemCheckModule
+        
+        console.print(Panel.fit("🔍 [bold cyan]LinuxScan System Check[/bold cyan]", 
+                               border_style="cyan"))
+        
+        # Initialize system check module
+        system_checker = SystemCheckModule()
+        
+        # Get modules to check
+        modules_to_check = None
+        if modules != 'port_scanner,vulnerability_scanner':
+            modules_to_check = validate_modules(modules)
+        
+        # Run system check
+        results = asyncio.run(system_checker.scan(modules=modules_to_check, auto_install=auto_install))
+        
+        # Display results and exit
+        if results.get('missing_system') or results.get('missing_python'):
+            console.print(f"[red]⚠️  Missing dependencies detected![/red]")
+            
+            if auto_install:
+                console.print("[yellow]Dependencies installation attempted[/yellow]")
+            else:
+                console.print("[yellow]Run with --auto-install to install missing dependencies[/yellow]")
+                console.print("[yellow]Or run: ./setup.sh --system-deps[/yellow]")
+            sys.exit(1)
+        else:
+            console.print("[green]✅ All dependencies are installed![/green]")
+            sys.exit(0)
+    
     if not quiet:
         display_banner()
     
+    # Check if targets are required
+    if not targets and not system_check and not version and not list_modules and not help_extended:
+        console.print("[red]Error: TARGETS argument is required unless using --system-check, --version, --list-modules, or --help-extended[/red]")
+        sys.exit(1)
+
     try:
         # Load configuration
         config_manager = ConfigManager()
@@ -303,16 +349,20 @@ def main(targets: str, modules: str, timeout: int, max_workers: int,
         )
         
         # Validate inputs
-        target_list = validate_targets(targets)
-        module_list = validate_modules(modules)
-        
-        if verbose:
-            console.print(f"[blue]Targets: {target_list}[/blue]")
-            console.print(f"[blue]Modules: {module_list}[/blue]")
-            console.print(f"[blue]Configuration: {config_manager.get_config()}[/blue]")
+        if targets:
+            target_list = validate_targets(targets)
+            module_list = validate_modules(modules)
+            
+            if verbose:
+                console.print(f"[blue]Targets: {target_list}[/blue]")
+                console.print(f"[blue]Modules: {module_list}[/blue]")
+                console.print(f"[blue]Configuration: {config_manager.get_config()}[/blue]")
+        else:
+            target_list = []
+            module_list = []
         
         # Interactive mode
-        if interactive:
+        if interactive and targets:
             console.print("[yellow]Interactive mode enabled[/yellow]")
             
             # Allow user to modify targets
@@ -330,6 +380,10 @@ def main(targets: str, modules: str, timeout: int, max_workers: int,
             if not click.confirm(f"Start scan of {len(target_list)} targets with {len(module_list)} modules?"):
                 console.print("[red]Scan cancelled[/red]")
                 return
+        
+        # Skip scanning if no targets
+        if not target_list:
+            return
         
         # Initialize scanner
         scanner = SecurityScanner(timeout=timeout, max_workers=max_workers)
@@ -509,6 +563,39 @@ def compliance_scan(target: str, compliance: str):
             )
         
         console.print(table)
+
+
+@cli.command()
+@click.option('--modules', '-m', multiple=True, help='Specific modules to check')
+@click.option('--auto-install', '-a', is_flag=True, help='Automatically install missing dependencies')
+@click.option('--verbose', '-v', is_flag=True, help='Verbose output')
+def system_check(modules: List[str], auto_install: bool, verbose: bool):
+    """Check system dependencies and install missing components"""
+    from .modules.system_check import SystemCheckModule
+    
+    console.print(Panel.fit("🔍 [bold cyan]LinuxScan System Check[/bold cyan]", 
+                           border_style="cyan"))
+    
+    # Initialize system check module
+    system_checker = SystemCheckModule()
+    
+    # Convert modules to list
+    modules_list = list(modules) if modules else None
+    
+    # Run system check
+    results = asyncio.run(system_checker.scan(modules=modules_list, auto_install=auto_install))
+    
+    # Display summary
+    if results.get('missing_system') or results.get('missing_python'):
+        console.print(f"[red]⚠️  Missing dependencies detected![/red]")
+        
+        if auto_install:
+            console.print("[yellow]Attempting to install missing dependencies...[/yellow]")
+        else:
+            console.print("[yellow]Run with --auto-install to install missing dependencies[/yellow]")
+            console.print("[yellow]Or run: ./setup.sh --system-deps[/yellow]")
+    else:
+        console.print("[green]✅ All dependencies are installed![/green]")
 
 
 @cli.command()
