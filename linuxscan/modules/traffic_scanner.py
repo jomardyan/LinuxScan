@@ -664,4 +664,84 @@ class TrafficAnalysisScanner(BaseScannerModule):
         except Exception as e:
             http_analysis['error'] = str(e)
         
+
+    async def _packet_capture(self, *args, **kwargs):
+        """Stub method for _packet_capture"""
+        return {'status': 'not_implemented', 'method': '_packet_capture'}
+
+    async def _detect_suspicious_patterns(self, *args, **kwargs):
+        """Stub method for _detect_suspicious_patterns"""
+        return {'status': 'not_implemented', 'method': '_detect_suspicious_patterns'}
+
+    def _analyze_bandwidth_usage(self, *args, **kwargs):
+        """Stub method for _analyze_bandwidth_usage"""
+        return {'status': 'not_implemented', 'method': '_analyze_bandwidth_usage'}
+
+    async def _detect_port_scans(self, *args, **kwargs):
+        """Stub method for _detect_port_scans"""
+        return {'status': 'not_implemented', 'method': '_detect_port_scans'}
+
+    async def _detect_ddos_patterns(self, *args, **kwargs):
+        """Stub method for _detect_ddos_patterns"""
+        return {'status': 'not_implemented', 'method': '_detect_ddos_patterns'}
+
+    def _analyze_protocol_distribution(self, *args, **kwargs):
+        """Stub method for _analyze_protocol_distribution"""
+        return {'status': 'not_implemented', 'method': '_analyze_protocol_distribution'}
+
+    async def _extract_file_transfers(self, *args, **kwargs):
+        """Stub method for _extract_file_transfers"""
+        return {'status': 'not_implemented', 'method': '_extract_file_transfers'}
+
+    def _generate_traffic_report(self, *args, **kwargs):
+        """Stub method for _generate_traffic_report"""
+        return {'status': 'not_implemented', 'method': '_generate_traffic_report'}
+
+    def _calculate_threat_score(self, *args, **kwargs):
+        """Stub method for _calculate_threat_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_threat_score'}
+
+    def _analyze_encrypted_traffic(self, *args, **kwargs):
+        """Stub method for _analyze_encrypted_traffic"""
+        return {'status': 'not_implemented', 'method': '_analyze_encrypted_traffic'}
+
+    async def _packet_capture(self, *args, **kwargs):
+        """Stub method for _packet_capture"""
+        return {'status': 'not_implemented', 'method': '_packet_capture'}
+
+    async def _detect_suspicious_patterns(self, *args, **kwargs):
+        """Stub method for _detect_suspicious_patterns"""
+        return {'status': 'not_implemented', 'method': '_detect_suspicious_patterns'}
+
+    def _analyze_bandwidth_usage(self, *args, **kwargs):
+        """Stub method for _analyze_bandwidth_usage"""
+        return {'status': 'not_implemented', 'method': '_analyze_bandwidth_usage'}
+
+    async def _detect_port_scans(self, *args, **kwargs):
+        """Stub method for _detect_port_scans"""
+        return {'status': 'not_implemented', 'method': '_detect_port_scans'}
+
+    async def _detect_ddos_patterns(self, *args, **kwargs):
+        """Stub method for _detect_ddos_patterns"""
+        return {'status': 'not_implemented', 'method': '_detect_ddos_patterns'}
+
+    def _analyze_protocol_distribution(self, *args, **kwargs):
+        """Stub method for _analyze_protocol_distribution"""
+        return {'status': 'not_implemented', 'method': '_analyze_protocol_distribution'}
+
+    async def _extract_file_transfers(self, *args, **kwargs):
+        """Stub method for _extract_file_transfers"""
+        return {'status': 'not_implemented', 'method': '_extract_file_transfers'}
+
+    def _generate_traffic_report(self, *args, **kwargs):
+        """Stub method for _generate_traffic_report"""
+        return {'status': 'not_implemented', 'method': '_generate_traffic_report'}
+
+    def _calculate_threat_score(self, *args, **kwargs):
+        """Stub method for _calculate_threat_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_threat_score'}
+
+    def _analyze_encrypted_traffic(self, *args, **kwargs):
+        """Stub method for _analyze_encrypted_traffic"""
+        return {'status': 'not_implemented', 'method': '_analyze_encrypted_traffic'}
         results['http_analysis'] = http_analysis

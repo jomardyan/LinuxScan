@@ -283,6 +283,8 @@ setup_virtual_environment() {
 # Function to install Python packages with error handling and broken package repair
 install_python_packages() {
     log "Installing Python dependencies..."
+    # Ensure setuptools is installed for editable/develop installs
+    pip install --upgrade setuptools || { error "Failed to install setuptools"; exit 1; }
     # Install wheel first for better compatibility
     pip install wheel || { error "Failed to install wheel"; exit 1; }
     # Install requirements

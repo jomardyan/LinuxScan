@@ -251,4 +251,92 @@ class SteganographyScanner(BaseScannerModule):
         except Exception as e:
             result['error'] = str(e)
         
+
+    async def _file_discovery(self, *args, **kwargs):
+        """Stub method for _file_discovery"""
+        return {'status': 'not_implemented', 'method': '_file_discovery'}
+
+    async def _statistical_analysis(self, *args, **kwargs):
+        """Stub method for _statistical_analysis"""
+        return {'status': 'not_implemented', 'method': '_statistical_analysis'}
+
+    async def _detect_steganography_tools(self, *args, **kwargs):
+        """Stub method for _detect_steganography_tools"""
+        return {'status': 'not_implemented', 'method': '_detect_steganography_tools'}
+
+    async def _lsb_analysis(self, *args, **kwargs):
+        """Stub method for _lsb_analysis"""
+        return {'status': 'not_implemented', 'method': '_lsb_analysis'}
+
+    async def _detect_hidden_archives(self, *args, **kwargs):
+        """Stub method for _detect_hidden_archives"""
+        return {'status': 'not_implemented', 'method': '_detect_hidden_archives'}
+
+    def _analyze_audio_steganography(self, *args, **kwargs):
+        """Stub method for _analyze_audio_steganography"""
+        return {'status': 'not_implemented', 'method': '_analyze_audio_steganography'}
+
+    async def _pdf_steganography_analysis(self, *args, **kwargs):
+        """Stub method for _pdf_steganography_analysis"""
+        return {'status': 'not_implemented', 'method': '_pdf_steganography_analysis'}
+
+    async def _frequency_analysis(self, *args, **kwargs):
+        """Stub method for _frequency_analysis"""
+        return {'status': 'not_implemented', 'method': '_frequency_analysis'}
+
+    def _generate_stego_report(self, *args, **kwargs):
+        """Stub method for _generate_stego_report"""
+        return {'status': 'not_implemented', 'method': '_generate_stego_report'}
+
+    def _calculate_steganography_probability(self, *args, **kwargs):
+        """Stub method for _calculate_steganography_probability"""
+        return {'status': 'not_implemented', 'method': '_calculate_steganography_probability'}
+
+    async def _extract_hidden_data(self, *args, **kwargs):
+        """Stub method for _extract_hidden_data"""
+        return {'status': 'not_implemented', 'method': '_extract_hidden_data'}
+
+    async def _file_discovery(self, *args, **kwargs):
+        """Stub method for _file_discovery"""
+        return {'status': 'not_implemented', 'method': '_file_discovery'}
+
+    async def _statistical_analysis(self, *args, **kwargs):
+        """Stub method for _statistical_analysis"""
+        return {'status': 'not_implemented', 'method': '_statistical_analysis'}
+
+    async def _detect_steganography_tools(self, *args, **kwargs):
+        """Stub method for _detect_steganography_tools"""
+        return {'status': 'not_implemented', 'method': '_detect_steganography_tools'}
+
+    async def _lsb_analysis(self, *args, **kwargs):
+        """Stub method for _lsb_analysis"""
+        return {'status': 'not_implemented', 'method': '_lsb_analysis'}
+
+    async def _detect_hidden_archives(self, *args, **kwargs):
+        """Stub method for _detect_hidden_archives"""
+        return {'status': 'not_implemented', 'method': '_detect_hidden_archives'}
+
+    def _analyze_audio_steganography(self, *args, **kwargs):
+        """Stub method for _analyze_audio_steganography"""
+        return {'status': 'not_implemented', 'method': '_analyze_audio_steganography'}
+
+    async def _pdf_steganography_analysis(self, *args, **kwargs):
+        """Stub method for _pdf_steganography_analysis"""
+        return {'status': 'not_implemented', 'method': '_pdf_steganography_analysis'}
+
+    async def _frequency_analysis(self, *args, **kwargs):
+        """Stub method for _frequency_analysis"""
+        return {'status': 'not_implemented', 'method': '_frequency_analysis'}
+
+    def _generate_stego_report(self, *args, **kwargs):
+        """Stub method for _generate_stego_report"""
+        return {'status': 'not_implemented', 'method': '_generate_stego_report'}
+
+    def _calculate_steganography_probability(self, *args, **kwargs):
+        """Stub method for _calculate_steganography_probability"""
+        return {'status': 'not_implemented', 'method': '_calculate_steganography_probability'}
+
+    async def _extract_hidden_data(self, *args, **kwargs):
+        """Stub method for _extract_hidden_data"""
+        return {'status': 'not_implemented', 'method': '_extract_hidden_data'}
         return result

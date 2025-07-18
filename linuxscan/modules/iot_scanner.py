@@ -593,4 +593,76 @@ class IoTDeviceScanner(BaseScannerModule):
                     'device_type': 'mqtt_broker'
                 })
         
+
+    async def _device_discovery(self, *args, **kwargs):
+        """Stub method for _device_discovery"""
+        return {'status': 'not_implemented', 'method': '_device_discovery'}
+
+    async def _scan_iot_ports(self, *args, **kwargs):
+        """Stub method for _scan_iot_ports"""
+        return {'status': 'not_implemented', 'method': '_scan_iot_ports'}
+
+    async def _fingerprint_device(self, *args, **kwargs):
+        """Stub method for _fingerprint_device"""
+        return {'status': 'not_implemented', 'method': '_fingerprint_device'}
+
+    def _analyze_iot_vulnerabilities(self, *args, **kwargs):
+        """Stub method for _analyze_iot_vulnerabilities"""
+        return {'status': 'not_implemented', 'method': '_analyze_iot_vulnerabilities'}
+
+    async def _check_firmware_vulnerabilities(self, *args, **kwargs):
+        """Stub method for _check_firmware_vulnerabilities"""
+        return {'status': 'not_implemented', 'method': '_check_firmware_vulnerabilities'}
+
+    async def _detect_iot_protocols(self, *args, **kwargs):
+        """Stub method for _detect_iot_protocols"""
+        return {'status': 'not_implemented', 'method': '_detect_iot_protocols'}
+
+    def _generate_iot_recommendations(self, *args, **kwargs):
+        """Stub method for _generate_iot_recommendations"""
+        return {'status': 'not_implemented', 'method': '_generate_iot_recommendations'}
+
+    def _calculate_iot_risk_score(self, *args, **kwargs):
+        """Stub method for _calculate_iot_risk_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_iot_risk_score'}
+
+    async def _extract_device_info(self, *args, **kwargs):
+        """Stub method for _extract_device_info"""
+        return {'status': 'not_implemented', 'method': '_extract_device_info'}
+
+    async def _device_discovery(self, *args, **kwargs):
+        """Stub method for _device_discovery"""
+        return {'status': 'not_implemented', 'method': '_device_discovery'}
+
+    async def _scan_iot_ports(self, *args, **kwargs):
+        """Stub method for _scan_iot_ports"""
+        return {'status': 'not_implemented', 'method': '_scan_iot_ports'}
+
+    async def _fingerprint_device(self, *args, **kwargs):
+        """Stub method for _fingerprint_device"""
+        return {'status': 'not_implemented', 'method': '_fingerprint_device'}
+
+    def _analyze_iot_vulnerabilities(self, *args, **kwargs):
+        """Stub method for _analyze_iot_vulnerabilities"""
+        return {'status': 'not_implemented', 'method': '_analyze_iot_vulnerabilities'}
+
+    async def _check_firmware_vulnerabilities(self, *args, **kwargs):
+        """Stub method for _check_firmware_vulnerabilities"""
+        return {'status': 'not_implemented', 'method': '_check_firmware_vulnerabilities'}
+
+    async def _detect_iot_protocols(self, *args, **kwargs):
+        """Stub method for _detect_iot_protocols"""
+        return {'status': 'not_implemented', 'method': '_detect_iot_protocols'}
+
+    def _generate_iot_recommendations(self, *args, **kwargs):
+        """Stub method for _generate_iot_recommendations"""
+        return {'status': 'not_implemented', 'method': '_generate_iot_recommendations'}
+
+    def _calculate_iot_risk_score(self, *args, **kwargs):
+        """Stub method for _calculate_iot_risk_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_iot_risk_score'}
+
+    async def _extract_device_info(self, *args, **kwargs):
+        """Stub method for _extract_device_info"""
+        return {'status': 'not_implemented', 'method': '_extract_device_info'}
         results['security_issues'] = security_issues

@@ -1,0 +1,2366 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0
+rootdir: /home/devserver/LinuxScan
+configfile: pyproject.toml
+testpaths: tests
+plugins: asyncio-1.1.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 193 items
+
+tests/test_async_multihost.py ..                                         [  1%]
+tests/test_cli.py s                                                      [  1%]
+tests/test_config.py ..............                                      [  8%]
+tests/test_crypto_scanner.py .s..F..FFFF                                 [ 14%]
+tests/test_enhanced_cli.py s                                             [ 15%]
+tests/test_gui.py .......                                                [ 18%]
+tests/test_iot_scanner.py FFFFFFFFFFFFF                                  [ 25%]
+tests/test_memory_scanner.py FFFFFFFFFFFFFFF                             [ 33%]
+tests/test_modules.py ...........................................        [ 55%]
+tests/test_scanner.py ...............FFFFFFFFF..                         [ 68%]
+tests/test_ssh_scanner.py ................                               [ 77%]
+tests/test_steganography_scanner.py FFFFFFFFFFFFFFFF                     [ 85%]
+tests/test_system_check.py FFFFFFFFFFFFF                                 [ 92%]
+tests/test_traffic_scanner.py FFFFFFFFFFFFFFF                            [100%]
+
+=================================== FAILURES ===================================
+__________ TestCryptoSecurityScanner.test_check_certificate_validity ___________
+
+self = <tests.test_crypto_scanner.TestCryptoSecurityScanner object at 0x7a7418bc0650>
+
+    def test_check_certificate_validity(self):
+        """Test certificate validity checking"""
+        scanner = CryptoSecurityScanner()
+    
+        # Test valid certificate
+        valid_cert = {
+            'notAfter': 'Dec 31 23:59:59 2024 GMT',
+            'notBefore': 'Jan 1 00:00:00 2023 GMT',
+            'subject': [['CN', 'example.com']],
+            'issuer': [['CN', 'Test CA']]
+        }
+    
+        result = scanner._check_certificate_validity(valid_cert)
+        assert result['valid'] == True
+>       assert 'days_until_expiry' in result
+E       AssertionError: assert 'days_until_expiry' in {'expired': False, 'issuer': [['CN', 'Test CA']], 'notAfter': 'Dec 31 23:59:59 2024 GMT', 'notBefore': 'Jan 1 00:00:00 2023 GMT', ...}
+
+tests/test_crypto_scanner.py:133: AssertionError
+______________ TestCryptoSecurityScanner.test_check_key_strength _______________
+
+self = <tests.test_crypto_scanner.TestCryptoSecurityScanner object at 0x7a7418b8bd70>
+
+    def test_check_key_strength(self):
+        """Test key strength checking"""
+        scanner = CryptoSecurityScanner()
+    
+        # Test weak key
+        weak_key = scanner._check_key_strength('RSA', 1024)
+        assert weak_key['strength'] == 'weak'
+>       assert 'insufficient' in weak_key['recommendation'].lower()
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'recommendation'
+
+tests/test_crypto_scanner.py:182: KeyError
+______________ TestCryptoSecurityScanner.test_check_hsts_support _______________
+
+self = <tests.test_crypto_scanner.TestCryptoSecurityScanner object at 0x7a7418b8adb0>
+
+    @pytest.mark.asyncio
+    async def test_check_hsts_support(self):
+        """Test HSTS support checking"""
+        scanner = CryptoSecurityScanner()
+    
+        with patch('aiohttp.ClientSession') as mock_session:
+            mock_response = AsyncMock()
+            mock_response.headers = {'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'}
+            mock_response.status = 200
+    
+            mock_session_instance = AsyncMock()
+            mock_session_instance.get.return_value.__aenter__.return_value = mock_response
+            mock_session.return_value = mock_session_instance
+    
+            result = await scanner._check_hsts_support('https://example.com')
+    
+>           assert result['hsts_enabled'] == True
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'hsts_enabled'
+
+tests/test_crypto_scanner.py:208: KeyError
+________ TestCryptoSecurityScanner.test_compile_crypto_recommendations _________
+
+self = <tests.test_crypto_scanner.TestCryptoSecurityScanner object at 0x7a7418b8a000>
+
+    def test_compile_crypto_recommendations(self):
+        """Test crypto recommendations compilation"""
+        scanner = CryptoSecurityScanner()
+    
+        results = {
+            'ssl_tls_analysis': {
+                'vulnerabilities': [
+                    {'type': 'Weak Cipher', 'severity': 'High', 'description': 'RC4 detected'}
+                ]
+            },
+            'certificate_analysis': {
+                'validity': {'valid': False, 'reason': 'Expired'}
+            },
+            'cryptographic_implementations': {
+                'weak_algorithms': ['MD5', 'SHA1']
+            }
+        }
+    
+>       recommendations = scanner._compile_crypto_recommendations(results)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'CryptoSecurityScanner' object has no attribute '_compile_crypto_recommendations'
+
+tests/test_crypto_scanner.py:230: AttributeError
+____________ TestCryptoSecurityScanner.test_calculate_crypto_score _____________
+
+self = <tests.test_crypto_scanner.TestCryptoSecurityScanner object at 0x7a7418bc0770>
+
+    def test_calculate_crypto_score(self):
+        """Test crypto security score calculation"""
+        scanner = CryptoSecurityScanner()
+    
+        # Test high security score
+        high_security_results = {
+            'ssl_tls_analysis': {
+                'protocols': ['TLSv1.3'],
+                'ciphers': ['AES256-GCM-SHA384'],
+                'vulnerabilities': []
+            },
+            'certificate_analysis': {
+                'validity': {'valid': True},
+                'key_strength': 2048
+            }
+        }
+    
+>       score = scanner._calculate_crypto_score(high_security_results)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'CryptoSecurityScanner' object has no attribute '_calculate_crypto_score'
+
+tests/test_crypto_scanner.py:254: AttributeError
+________________________ TestIoTDeviceScanner.test_init ________________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307530>
+
+    def test_init(self):
+        """Test IoTDeviceScanner initialization"""
+        scanner = IoTDeviceScanner()
+>       assert scanner.name == "iot_scanner"
+E       AssertionError: assert 'iot_device_scanner' == 'iot_scanner'
+E         
+E         - iot_scanner
+E         + iot_device_scanner
+E         ?    +++++++
+
+tests/test_iot_scanner.py:19: AssertionError
+_____________________ TestIoTDeviceScanner.test_scan_basic _____________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a74183076e0>
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self):
+        """Test basic IoT scanning"""
+        scanner = IoTDeviceScanner()
+    
+>       with patch.object(scanner, '_device_discovery') as mock_discovery:
+
+tests/test_iot_scanner.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a7417fe1940>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.iot_scanner.IoTDeviceScanner object at 0x7a7417fe0680> does not have the attribute '_device_discovery'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+__________________ TestIoTDeviceScanner.test_device_discovery __________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a74183078c0>
+
+    @pytest.mark.asyncio
+    async def test_device_discovery(self):
+        """Test IoT device discovery"""
+        scanner = IoTDeviceScanner()
+    
+>       with patch.object(scanner, '_scan_iot_ports') as mock_ports:
+
+tests/test_iot_scanner.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a7417fe1760>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.iot_scanner.IoTDeviceScanner object at 0x7a7417fe09e0> does not have the attribute '_scan_iot_ports'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+_________________ TestIoTDeviceScanner.test_fingerprint_device _________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307b00>
+
+    def test_fingerprint_device(self):
+        """Test device fingerprinting"""
+        scanner = IoTDeviceScanner()
+    
+        # Test IP camera fingerprinting
+        services = {
+            80: {'banner': 'Server: lighttpd/1.4.35', 'service': 'HTTP'},
+            554: {'banner': 'RTSP/1.0 200 OK', 'service': 'RTSP'}
+        }
+    
+>       result = scanner._fingerprint_device('192.168.1.100', services)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_fingerprint_device'
+
+tests/test_iot_scanner.py:106: AttributeError
+___________________ TestIoTDeviceScanner.test_mqtt_analysis ____________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307cb0>
+
+    @pytest.mark.asyncio
+    async def test_mqtt_analysis(self):
+        """Test MQTT protocol analysis"""
+        scanner = IoTDeviceScanner()
+    
+>       with patch('paho.mqtt.client.Client') as mock_client:
+
+tests/test_iot_scanner.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1442: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/usr/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'paho', import_ = <function _gcd_import at 0x7a742090c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'paho'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+___________________ TestIoTDeviceScanner.test_coap_analysis ____________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307ef0>
+
+    @pytest.mark.asyncio
+    async def test_coap_analysis(self):
+        """Test CoAP protocol analysis"""
+        scanner = IoTDeviceScanner()
+    
+>       with patch('aiocoap.Context') as mock_context:
+
+tests/test_iot_scanner.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1442: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/usr/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'aiocoap', import_ = <function _gcd_import at 0x7a742090c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'aiocoap'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+____________ TestIoTDeviceScanner.test_analyze_iot_vulnerabilities _____________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418334170>
+
+    def test_analyze_iot_vulnerabilities(self):
+        """Test IoT vulnerability analysis"""
+        scanner = IoTDeviceScanner()
+    
+        device_info = {
+            'device_type': 'IP Camera',
+            'vendor': 'Hikvision',
+            'firmware': '5.4.5',
+            'services': {
+                80: {'service': 'HTTP', 'banner': 'Server: lighttpd/1.4.35'},
+                554: {'service': 'RTSP'}
+            }
+        }
+    
+        protocols = {
+            'mqtt': {'enabled': True, 'authentication': False},
+            'http': {'enabled': True, 'security': 'weak'}
+        }
+    
+        credentials = {
+            'default_credentials': [
+                {'username': 'admin', 'password': 'admin', 'access': 'full'}
+            ]
+        }
+    
+>       vulnerabilities = scanner._analyze_iot_vulnerabilities(device_info, protocols, credentials)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_analyze_iot_vulnerabilities'
+
+tests/test_iot_scanner.py:175: AttributeError
+___________ TestIoTDeviceScanner.test_check_firmware_vulnerabilities ___________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307e00>
+
+    def test_check_firmware_vulnerabilities(self):
+        """Test firmware vulnerability checking"""
+        scanner = IoTDeviceScanner()
+    
+        # Test known vulnerable firmware
+        device_info = {
+            'vendor': 'Hikvision',
+            'model': 'DS-2CD2142FWD-I',
+            'firmware': '5.4.5'
+        }
+    
+>       vulnerabilities = scanner._check_firmware_vulnerabilities(device_info)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_check_firmware_vulnerabilities'
+
+tests/test_iot_scanner.py:191: AttributeError
+________________ TestIoTDeviceScanner.test_detect_iot_protocols ________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307a10>
+
+    def test_detect_iot_protocols(self):
+        """Test IoT protocol detection"""
+        scanner = IoTDeviceScanner()
+    
+        services = {
+            1883: {'service': 'MQTT', 'banner': 'MQTT broker'},
+            5683: {'service': 'CoAP', 'banner': 'CoAP server'},
+            8080: {'service': 'HTTP', 'banner': 'HTTP server'}
+        }
+    
+>       protocols = scanner._detect_iot_protocols(services)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_detect_iot_protocols'
+
+tests/test_iot_scanner.py:206: AttributeError
+____________ TestIoTDeviceScanner.test_generate_iot_recommendations ____________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418307770>
+
+    def test_generate_iot_recommendations(self):
+        """Test IoT security recommendations"""
+        scanner = IoTDeviceScanner()
+    
+        results = {
+            'device_discovery': {
+                'detected_devices': [
+                    {'device_type': 'IP Camera', 'vendor': 'Hikvision'}
+                ]
+            },
+            'protocol_analysis': {
+                'mqtt': {'enabled': True, 'authentication': False}
+            },
+            'credential_testing': {
+                'default_credentials': [
+                    {'username': 'admin', 'password': 'admin'}
+                ]
+            },
+            'vulnerability_analysis': {
+                'vulnerabilities': [
+                    {'type': 'Default Credentials', 'severity': 'High'}
+                ]
+            }
+        }
+    
+>       recommendations = scanner._generate_iot_recommendations(results)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_generate_iot_recommendations'
+
+tests/test_iot_scanner.py:237: AttributeError
+______________ TestIoTDeviceScanner.test_calculate_iot_risk_score ______________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a7418306ba0>
+
+    def test_calculate_iot_risk_score(self):
+        """Test IoT risk score calculation"""
+        scanner = IoTDeviceScanner()
+    
+        # Test high risk scenario
+        high_risk_results = {
+            'vulnerability_analysis': {
+                'vulnerabilities': [
+                    {'severity': 'Critical'},
+                    {'severity': 'High'},
+                    {'severity': 'Medium'}
+                ]
+            },
+            'credential_testing': {
+                'default_credentials': [
+                    {'username': 'admin', 'password': 'admin'}
+                ]
+            },
+            'protocol_analysis': {
+                'mqtt': {'enabled': True, 'authentication': False}
+            }
+        }
+    
+>       score = scanner._calculate_iot_risk_score(high_risk_results)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_calculate_iot_risk_score'
+
+tests/test_iot_scanner.py:266: AttributeError
+___________________ TestIoTDeviceScanner.test_scan_iot_ports ___________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a74183066c0>
+
+    @pytest.mark.asyncio
+    async def test_scan_iot_ports(self):
+        """Test IoT port scanning"""
+        scanner = IoTDeviceScanner()
+    
+        with patch('asyncio.open_connection') as mock_connect:
+            mock_reader = AsyncMock()
+            mock_writer = AsyncMock()
+            mock_reader.read.return_value = b'HTTP/1.1 200 OK\r\nServer: lighttpd/1.4.35\r\n\r\n'
+            mock_connect.return_value = (mock_reader, mock_writer)
+    
+>           result = await scanner._scan_iot_ports(['192.168.1.100'])
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'IoTDeviceScanner' object has no attribute '_scan_iot_ports'
+
+tests/test_iot_scanner.py:296: AttributeError
+________________ TestIoTDeviceScanner.test_extract_device_info _________________
+
+self = <tests.test_iot_scanner.TestIoTDeviceScanner object at 0x7a74183340e0>
+
+    def test_extract_device_info(self):
+        """Test device information extraction"""
+        scanner = IoTDeviceScanner()
+    
+        # Test HTTP banner extraction
+        http_banner = 'HTTP/1.1 200 OK\r\nServer: lighttpd/1.4.35\r\nContent-Type: text/html\r\n\r\n<html><title>IP Camera</title></html>'
+    
+>       info = scanner._extract_device_info(http_banner, 80)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'IoTDeviceScanner' object has no attribute '_extract_device_info'
+
+tests/test_iot_scanner.py:309: AttributeError
+_____________________ TestMemoryAnalysisScanner.test_init ______________________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418334b00>
+
+    def test_init(self):
+        """Test MemoryAnalysisScanner initialization"""
+        scanner = MemoryAnalysisScanner()
+>       assert scanner.name == "memory_scanner"
+E       AssertionError: assert 'memory_analysis_scanner' == 'memory_scanner'
+E         
+E         - memory_scanner
+E         + memory_analysis_scanner
+E         ?       +++++++++
+
+tests/test_memory_scanner.py:19: AssertionError
+__________________ TestMemoryAnalysisScanner.test_scan_basic ___________________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418334cb0>
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self):
+        """Test basic memory scanning"""
+        scanner = MemoryAnalysisScanner()
+    
+>       with patch.object(scanner, '_memory_acquisition') as mock_acquisition:
+
+tests/test_memory_scanner.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a7417faa660>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.memory_scanner.MemoryAnalysisScanner object at 0x7a7417faa900> does not have the attribute '_memory_acquisition'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+______________ TestMemoryAnalysisScanner.test_memory_acquisition _______________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418334f20>
+
+    @pytest.mark.asyncio
+    async def test_memory_acquisition(self):
+        """Test memory acquisition"""
+        scanner = MemoryAnalysisScanner()
+    
+        with patch('subprocess.run') as mock_subprocess:
+            mock_subprocess.return_value.returncode = 0
+            mock_subprocess.return_value.stdout = b'Memory dump completed'
+    
+            with patch('os.path.exists') as mock_exists:
+                mock_exists.return_value = True
+    
+                with patch('os.path.getsize') as mock_size:
+                    mock_size.return_value = 1024000
+    
+>                   result = await scanner._memory_acquisition('192.168.1.100')
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'MemoryAnalysisScanner' object has no attribute '_memory_acquisition'
+
+tests/test_memory_scanner.py:75: AttributeError
+______________ TestMemoryAnalysisScanner.test_volatility_analysis ______________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335160>
+
+        @pytest.mark.asyncio
+        async def test_volatility_analysis(self):
+            """Test Volatility framework analysis"""
+            scanner = MemoryAnalysisScanner()
+    
+            with patch('subprocess.run') as mock_subprocess:
+                # Mock pslist output
+                mock_subprocess.return_value.returncode = 0
+                mock_subprocess.return_value.stdout = b'''
+    PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
+    1234    1       suspicious.exe  0x85abc123  2       45      1
+    5678    1       svchost.exe     0x85def456  8       123     0
+    '''
+    
+>               result = await scanner._volatility_analysis('/tmp/memory.dump')
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'MemoryAnalysisScanner' object has no attribute '_volatility_analysis'
+
+tests/test_memory_scanner.py:95: AttributeError
+_____________ TestMemoryAnalysisScanner.test_analyze_process_list ______________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335370>
+
+    def test_analyze_process_list(self):
+        """Test process list analysis"""
+        scanner = MemoryAnalysisScanner()
+    
+        processes = [
+            {'pid': 1234, 'name': 'suspicious.exe', 'command': 'malware.exe'},
+            {'pid': 5678, 'name': 'svchost.exe', 'command': 'svchost.exe -k netsvcs'},
+            {'pid': 9012, 'name': 'explorer.exe', 'command': 'explorer.exe'}
+        ]
+    
+>       suspicious_processes = scanner._analyze_process_list(processes)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_analyze_process_list'. Did you mean: '_analyze_processes'?
+
+tests/test_memory_scanner.py:112: AttributeError
+___________ TestMemoryAnalysisScanner.test_detect_process_injection ____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335520>
+
+    def test_detect_process_injection(self):
+        """Test process injection detection"""
+        scanner = MemoryAnalysisScanner()
+    
+        processes = [
+            {
+                'pid': 1234,
+                'name': 'explorer.exe',
+                'command': 'explorer.exe',
+                'memory_regions': [
+                    {'start': 0x400000, 'end': 0x500000, 'permissions': 'rwx', 'type': 'executable'}
+                ]
+            }
+        ]
+    
+>       injected_processes = scanner._detect_process_injection(processes)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_detect_process_injection'
+
+tests/test_memory_scanner.py:132: AttributeError
+__________ TestMemoryAnalysisScanner.test_analyze_network_connections __________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a74183356d0>
+
+    def test_analyze_network_connections(self):
+        """Test network connection analysis"""
+        scanner = MemoryAnalysisScanner()
+    
+        connections = [
+            {'pid': 1234, 'local_addr': '192.168.1.100:1234', 'remote_addr': '192.168.1.1:80', 'state': 'ESTABLISHED'},
+            {'pid': 5678, 'local_addr': '192.168.1.100:5678', 'remote_addr': '10.0.0.1:443', 'state': 'ESTABLISHED'}
+        ]
+    
+        suspicious_connections = scanner._analyze_network_connections(connections)
+    
+>       assert isinstance(suspicious_connections, list)
+E       assert False
+E        +  where False = isinstance(<coroutine object MemoryAnalysisScanner._analyze_network_connections at 0x7a74187ff760>, list)
+
+tests/test_memory_scanner.py:148: AssertionError
+___________ TestMemoryAnalysisScanner.test_detect_rootkit_indicators ___________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335880>
+
+    def test_detect_rootkit_indicators(self):
+        """Test rootkit indicator detection"""
+        scanner = MemoryAnalysisScanner()
+    
+        # Test with rootkit signatures
+        memory_content = b'some_rootkit_signature_here'
+    
+>       indicators = scanner._detect_rootkit_indicators(memory_content)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_detect_rootkit_indicators'
+
+tests/test_memory_scanner.py:158: AttributeError
+_____________ TestMemoryAnalysisScanner.test_analyze_syscall_table _____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335a30>
+
+    def test_analyze_syscall_table(self):
+        """Test syscall table analysis"""
+        scanner = MemoryAnalysisScanner()
+    
+        syscall_table = [
+            {'number': 1, 'name': 'sys_exit', 'address': 0x80123456, 'original': True},
+            {'number': 2, 'name': 'sys_fork', 'address': 0x80654321, 'original': False}
+        ]
+    
+>       modified_syscalls = scanner._analyze_syscall_table(syscall_table)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_analyze_syscall_table'
+
+tests/test_memory_scanner.py:172: AttributeError
+___________ TestMemoryAnalysisScanner.test_extract_memory_artifacts ____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335be0>
+
+    def test_extract_memory_artifacts(self):
+        """Test memory artifact extraction"""
+        scanner = MemoryAnalysisScanner()
+    
+        memory_dump = b'''
+        Some memory content with passwords:
+        password123
+        secretkey456
+        And some URLs:
+        http://malware.com/payload
+        https://c2.evil.com/beacon
+        '''
+    
+>       artifacts = scanner._extract_memory_artifacts(memory_dump)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_extract_memory_artifacts'
+
+tests/test_memory_scanner.py:190: AttributeError
+______________ TestMemoryAnalysisScanner.test_analyze_heap_spray _______________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335d90>
+
+    def test_analyze_heap_spray(self):
+        """Test heap spray detection"""
+        scanner = MemoryAnalysisScanner()
+    
+        # Mock heap data with spray pattern
+        heap_data = b'\x90' * 1000 + b'\x41' * 1000  # NOP sled + shellcode pattern
+    
+>       spray_indicators = scanner._analyze_heap_spray(heap_data)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_analyze_heap_spray'
+
+tests/test_memory_scanner.py:205: AttributeError
+_____________ TestMemoryAnalysisScanner.test_detect_code_injection _____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418335f40>
+
+    def test_detect_code_injection(self):
+        """Test code injection detection"""
+        scanner = MemoryAnalysisScanner()
+    
+        processes = [
+            {
+                'pid': 1234,
+                'name': 'notepad.exe',
+                'memory_regions': [
+                    {
+                        'start': 0x400000,
+                        'end': 0x500000,
+                        'permissions': 'rwx',
+                        'type': 'private',
+                        'content': b'\x90\x90\x90\x90\x31\xc0\x50\x68'  # Suspicious shellcode
+                    }
+                ]
+            }
+        ]
+    
+>       injected_code = scanner._detect_code_injection(processes)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_detect_code_injection'. Did you mean: '_check_code_injection'?
+
+tests/test_memory_scanner.py:231: AttributeError
+___________ TestMemoryAnalysisScanner.test_analyze_driver_integrity ____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a74183063c0>
+
+    def test_analyze_driver_integrity(self):
+        """Test driver integrity analysis"""
+        scanner = MemoryAnalysisScanner()
+    
+        drivers = [
+            {
+                'name': 'ntoskrnl.exe',
+                'base_address': 0x80400000,
+                'size': 0x400000,
+                'digital_signature': True,
+                'modified': False
+            },
+            {
+                'name': 'suspicious.sys',
+                'base_address': 0x80800000,
+                'size': 0x10000,
+                'digital_signature': False,
+                'modified': True
+            }
+        ]
+    
+>       integrity_issues = scanner._analyze_driver_integrity(drivers)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_analyze_driver_integrity'
+
+tests/test_memory_scanner.py:257: AttributeError
+____________ TestMemoryAnalysisScanner.test_generate_memory_report _____________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a74183077d0>
+
+    def test_generate_memory_report(self):
+        """Test memory analysis report generation"""
+        scanner = MemoryAnalysisScanner()
+    
+        results = {
+            'memory_acquisition': {
+                'memory_dump': '/tmp/memory.dump',
+                'dump_size': 1024000
+            },
+            'volatility_analysis': {
+                'processes': [
+                    {'pid': 1234, 'name': 'suspicious.exe'}
+                ],
+                'network_connections': [],
+                'loaded_modules': []
+            },
+            'rootkit_detection': {
+                'rootkit_indicators': [
+                    {'type': 'Modified Syscall', 'description': 'sys_fork modified'}
+                ],
+                'hidden_processes': [],
+                'modified_syscalls': []
+            }
+        }
+    
+>       report = scanner._generate_memory_report(results)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_generate_memory_report'
+
+tests/test_memory_scanner.py:287: AttributeError
+__________ TestMemoryAnalysisScanner.test_calculate_memory_risk_score __________
+
+self = <tests.test_memory_scanner.TestMemoryAnalysisScanner object at 0x7a7418336120>
+
+    def test_calculate_memory_risk_score(self):
+        """Test memory analysis risk score calculation"""
+        scanner = MemoryAnalysisScanner()
+    
+        # Test high risk scenario
+        high_risk_results = {
+            'volatility_analysis': {
+                'suspicious_processes': [
+                    {'name': 'malware.exe', 'pid': 1234}
+                ]
+            },
+            'rootkit_detection': {
+                'rootkit_indicators': [
+                    {'type': 'Modified Syscall', 'severity': 'High'}
+                ]
+            },
+            'artifact_analysis': {
+                'suspicious_artifacts': [
+                    {'type': 'Malicious URL', 'content': 'http://malware.com'}
+                ]
+            }
+        }
+    
+>       score = scanner._calculate_memory_risk_score(high_risk_results)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MemoryAnalysisScanner' object has no attribute '_calculate_memory_risk_score'
+
+tests/test_memory_scanner.py:317: AttributeError
+_____________ TestSecurityScanner.test_analyze_vulnerabilities_ssh _____________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838dc70>
+
+    def test_analyze_vulnerabilities_ssh(self):
+        """Test vulnerability analysis for SSH"""
+        scanner = SecurityScanner()
+    
+        scan_data = {
+            'open_ports': {22: {'service': 'SSH-2.0-OpenSSH_7.4'}},
+            'ssh_security': {
+                'protocol_version': 'SSH-2.0',
+                'weak_algorithms': ['aes128-cbc']
+            }
+        }
+    
+>       vulnerabilities = scanner.analyze_vulnerabilities(scan_data)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SecurityScanner' object has no attribute 'analyze_vulnerabilities'
+
+tests/test_scanner.py:180: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_____________ TestSecurityScanner.test_analyze_vulnerabilities_ssl _____________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838de20>
+
+    def test_analyze_vulnerabilities_ssl(self):
+        """Test vulnerability analysis for SSL"""
+        scanner = SecurityScanner()
+    
+        scan_data = {
+            'open_ports': {443: {'service': 'HTTPS'}},
+            'ssl_certificates': {
+                443: {
+                    'expired': True,
+                    'subject': 'example.com'
+                }
+            }
+        }
+    
+>       vulnerabilities = scanner.analyze_vulnerabilities(scan_data)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SecurityScanner' object has no attribute 'analyze_vulnerabilities'
+
+tests/test_scanner.py:198: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+____________ TestSecurityScanner.test_calculate_security_score_high ____________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838dfd0>
+
+    def test_calculate_security_score_high(self):
+        """Test security score calculation for secure system"""
+        scanner = SecurityScanner()
+    
+        scan_data = {
+            'open_ports': {22: {'service': 'SSH-2.0-OpenSSH_8.0'}},
+            'vulnerabilities': [],
+            'ssl_certificates': {},
+            'ssh_security': {'protocol_version': 'SSH-2.0'}
+        }
+    
+>       score, rating = scanner.calculate_security_score(scan_data)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SecurityScanner' object has no attribute 'calculate_security_score'. Did you mean: '_calculate_security_score'?
+
+tests/test_scanner.py:213: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+____________ TestSecurityScanner.test_calculate_security_score_low _____________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741835d760>
+
+    def test_calculate_security_score_low(self):
+        """Test security score calculation for insecure system"""
+        scanner = SecurityScanner()
+    
+        scan_data = {
+            'open_ports': {
+                21: {'service': 'FTP'},
+                23: {'service': 'Telnet'},
+                80: {'service': 'HTTP'}
+            },
+            'vulnerabilities': [
+                'Weak SSH algorithms detected',
+                'Expired SSL certificate',
+                'Insecure FTP service'
+            ],
+            'ssl_certificates': {443: {'expired': True}},
+            'ssh_security': None
+        }
+    
+>       score, rating = scanner.calculate_security_score(scan_data)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SecurityScanner' object has no attribute 'calculate_security_score'. Did you mean: '_calculate_security_score'?
+
+tests/test_scanner.py:236: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_____________________ TestSecurityScanner.test_export_json _____________________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741835ec00>
+
+    def test_export_json(self):
+        """Test JSON export functionality"""
+        scanner = SecurityScanner()
+        scanner.results = {
+            '192.168.1.1': {
+                'open_ports': {22: {'service': 'SSH'}},
+                'vulnerabilities': []
+            }
+        }
+    
+        with patch('builtins.open', mock_open()) as mock_file:
+>           scanner.export_json('test.json')
+            ^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SecurityScanner' object has no attribute 'export_json'
+
+tests/test_scanner.py:251: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_____________________ TestSecurityScanner.test_export_csv ______________________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838e000>
+
+    def test_export_csv(self):
+        """Test CSV export functionality"""
+        scanner = SecurityScanner()
+        scanner.results = {
+            '192.168.1.1': {
+                'open_ports': {22: {'service': 'SSH'}},
+                'vulnerabilities': [],
+                'security_analysis': {'score': 80, 'rating': 'Good'}
+            }
+        }
+    
+        with patch('builtins.open', mock_open()) as mock_file:
+>           scanner.export_csv('test.csv')
+            ^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SecurityScanner' object has no attribute 'export_csv'
+
+tests/test_scanner.py:270: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_____________________ TestSecurityScanner.test_export_html _____________________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838dbe0>
+
+    def test_export_html(self):
+        """Test HTML export functionality"""
+        scanner = SecurityScanner()
+        scanner.results = {
+            '192.168.1.1': {
+                'open_ports': {22: {'service': 'SSH'}},
+                'vulnerabilities': [],
+                'security_analysis': {'score': 80, 'rating': 'Good'}
+            }
+        }
+    
+        with patch('builtins.open', mock_open()) as mock_file:
+>           scanner.export_html('test.html')
+            ^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SecurityScanner' object has no attribute 'export_html'
+
+tests/test_scanner.py:285: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_______________ TestSecurityScanner.test_generate_summary_table ________________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838d8b0>
+
+    def test_generate_summary_table(self):
+        """Test summary table generation"""
+        scanner = SecurityScanner()
+        scanner.results = {
+            '192.168.1.1': {
+                'open_ports': {22: {'service': 'SSH'}},
+                'vulnerabilities': [],
+                'security_analysis': {'score': 80, 'rating': 'Good'}
+            }
+        }
+    
+>       table = scanner.generate_summary_table()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SecurityScanner' object has no attribute 'generate_summary_table'
+
+tests/test_scanner.py:304: AttributeError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+_____________ TestSecurityScanner.test_scan_network_single_target ______________
+
+self = <tests.test_scanner.TestSecurityScanner object at 0x7a741838d520>
+
+    @pytest.mark.asyncio
+    async def test_scan_network_single_target(self):
+        """Test scanning single network target"""
+        scanner = SecurityScanner()
+    
+        # Mock the individual scan methods
+        with patch.object(scanner, 'scan_host') as mock_scan_host:
+            mock_scan_host.return_value = {
+                'open_ports': {22: {'service': 'SSH'}},
+                'vulnerabilities': [],
+                'security_analysis': {'score': 80, 'rating': 'Good'}
+            }
+    
+            await scanner.scan_network(['127.0.0.1'])
+    
+>           mock_scan_host.assert_called_once_with('127.0.0.1')
+
+tests/test_scanner.py:323: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:956: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <AsyncMock name='scan_host' id='134639010262928'>, args = ('127.0.0.1',)
+kwargs = {}, expected = call('127.0.0.1')
+actual = call('127.0.0.1', ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner', 'ssh_scanner'])
+_error_message = <function NonCallableMock.assert_called_with.<locals>._error_message at 0x7a74166d98a0>
+cause = None
+
+    def assert_called_with(self, /, *args, **kwargs):
+        """assert that the last call was made with the specified arguments.
+    
+        Raises an AssertionError if the args and keyword args passed in are
+        different to the last call to the mock."""
+        if self.call_args is None:
+            expected = self._format_mock_call_signature(args, kwargs)
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
+    
+        def _error_message():
+            msg = self._format_mock_failure_message(args, kwargs)
+            return msg
+        expected = self._call_matcher(_Call((args, kwargs), two=True))
+        actual = self._call_matcher(self.call_args)
+        if actual != expected:
+            cause = expected if isinstance(expected, Exception) else None
+>           raise AssertionError(_error_message()) from cause
+E           AssertionError: expected call not found.
+E           Expected: scan_host('127.0.0.1')
+E             Actual: scan_host('127.0.0.1', ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner', 'ssh_scanner'])
+
+/usr/lib/python3.12/unittest/mock.py:944: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     security_scanner:enhanced_scanner.py:204 SecurityScanner initialized with 15 modules
+INFO     linuxscan.scan:logging_config.py:111 Starting network_scan scan on 1 targets
+INFO     linuxscan.scan:logging_config.py:124 Completed network_scan scan on 1 targets in 0.00s
+______________________ TestSteganographyScanner.test_init ______________________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b94f0>
+
+    def test_init(self):
+        """Test SteganographyScanner initialization"""
+        scanner = SteganographyScanner()
+        assert scanner.name == "steganography_scanner"
+>       assert scanner.timeout == 120
+E       assert 300 == 120
+E        +  where 300 = <linuxscan.modules.steganography_scanner.SteganographyScanner object at 0x7a74164acaa0>.timeout
+
+tests/test_steganography_scanner.py:20: AssertionError
+___________________ TestSteganographyScanner.test_scan_basic ___________________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b96a0>
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self):
+        """Test basic steganography scanning"""
+        scanner = SteganographyScanner()
+    
+>       with patch.object(scanner, '_file_discovery') as mock_discovery:
+
+tests/test_steganography_scanner.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a7416612090>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.steganography_scanner.SteganographyScanner object at 0x7a7416612000> does not have the attribute '_file_discovery'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+_________________ TestSteganographyScanner.test_file_discovery _________________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9910>
+
+    @pytest.mark.asyncio
+    async def test_file_discovery(self):
+        """Test file discovery for steganography analysis"""
+        scanner = SteganographyScanner()
+    
+        with patch('os.walk') as mock_walk:
+            mock_walk.return_value = [
+                ('/tmp', ['subdir'], ['test.jpg', 'test.png', 'test.wav', 'test.mp4', 'test.pdf']),
+                ('/tmp/subdir', [], ['hidden.jpg'])
+            ]
+    
+            with patch('os.path.getsize') as mock_size:
+                mock_size.return_value = 1024000  # 1MB
+    
+>               result = await scanner._file_discovery('/tmp')
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SteganographyScanner' object has no attribute '_file_discovery'
+
+tests/test_steganography_scanner.py:81: AttributeError
+_____________ TestSteganographyScanner.test_analyze_file_metadata ______________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9b50>
+
+    def test_analyze_file_metadata(self):
+        """Test file metadata analysis"""
+        scanner = SteganographyScanner()
+    
+>       with patch('PIL.Image.open') as mock_pil:
+
+tests/test_steganography_scanner.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1442: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/usr/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'PIL', import_ = <function _gcd_import at 0x7a742090c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'PIL'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+______________ TestSteganographyScanner.test_statistical_analysis ______________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9d00>
+
+    def test_statistical_analysis(self):
+        """Test statistical analysis for steganography detection"""
+        scanner = SteganographyScanner()
+    
+        # Mock file data
+        file_data = b'\x89PNG\r\n\x1a\n' + b'\x00' * 1000 + b'\xFF' * 1000
+    
+        with patch('builtins.open', mock_open_binary(file_data)):
+>           result = scanner._statistical_analysis('/tmp/test.png')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SteganographyScanner' object has no attribute '_statistical_analysis'
+
+tests/test_steganography_scanner.py:116: AttributeError
+___________ TestSteganographyScanner.test_detect_steganography_tools ___________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9eb0>
+
+    def test_detect_steganography_tools(self):
+        """Test steganography tool detection"""
+        scanner = SteganographyScanner()
+    
+        with patch('subprocess.run') as mock_subprocess:
+            # Mock steghide detection
+            mock_subprocess.return_value.returncode = 0
+            mock_subprocess.return_value.stdout = b'steghide: could not extract any data'
+    
+>           result = scanner._detect_steganography_tools('/tmp/test.jpg')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SteganographyScanner' object has no attribute '_detect_steganography_tools'
+
+tests/test_steganography_scanner.py:132: AttributeError
+____________ TestSteganographyScanner.test_analyze_image_histogram _____________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183ba060>
+
+    def test_analyze_image_histogram(self):
+        """Test image histogram analysis"""
+        scanner = SteganographyScanner()
+    
+>       with patch('PIL.Image.open') as mock_pil:
+
+tests/test_steganography_scanner.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1442: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/usr/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'PIL', import_ = <function _gcd_import at 0x7a742090c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'PIL'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+__________________ TestSteganographyScanner.test_lsb_analysis __________________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a741838cf80>
+
+    def test_lsb_analysis(self):
+        """Test LSB (Least Significant Bit) analysis"""
+        scanner = SteganographyScanner()
+    
+        # Mock image data with potential LSB steganography
+        image_data = bytearray(b'\x00\x01\x02\x03' * 1000)  # Pattern that might indicate LSB
+    
+>       result = scanner._lsb_analysis(image_data)
+                 ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SteganographyScanner' object has no attribute '_lsb_analysis'
+
+tests/test_steganography_scanner.py:160: AttributeError
+_____________ TestSteganographyScanner.test_detect_hidden_archives _____________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a741838f710>
+
+    def test_detect_hidden_archives(self):
+        """Test hidden archive detection"""
+        scanner = SteganographyScanner()
+    
+        # Mock file with embedded ZIP
+        file_data = b'Normal image data here' + b'PK\x03\x04' + b'ZIP archive data'
+    
+        with patch('builtins.open', mock_open_binary(file_data)):
+>           result = scanner._detect_hidden_archives('/tmp/test.jpg')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SteganographyScanner' object has no attribute '_detect_hidden_archives'
+
+tests/test_steganography_scanner.py:174: AttributeError
+__________ TestSteganographyScanner.test_analyze_audio_steganography ___________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a741838eed0>
+
+    def test_analyze_audio_steganography(self):
+        """Test audio steganography analysis"""
+        scanner = SteganographyScanner()
+    
+        with patch('wave.open') as mock_wave:
+            mock_audio = MagicMock()
+            mock_audio.getnchannels.return_value = 2
+            mock_audio.getsampwidth.return_value = 2
+            mock_audio.getframerate.return_value = 44100
+            mock_audio.getnframes.return_value = 44100
+            mock_audio.readframes.return_value = b'\x00\x01' * 44100
+            mock_wave.return_value = mock_audio
+    
+>           result = scanner._analyze_audio_steganography('/tmp/test.wav')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SteganographyScanner' object has no attribute '_analyze_audio_steganography'
+
+tests/test_steganography_scanner.py:193: AttributeError
+___________ TestSteganographyScanner.test_pdf_steganography_analysis ___________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9fa0>
+
+        def test_pdf_steganography_analysis(self):
+            """Test PDF steganography analysis"""
+            scanner = SteganographyScanner()
+    
+            pdf_content = b'''%PDF-1.4
+    1 0 obj
+    << /Type /Catalog /Pages 2 0 R >>
+    endobj
+    2 0 obj
+    << /Type /Pages /Kids [3 0 R] /Count 1 >>
+    endobj
+    3 0 obj
+    << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+    endobj
+    xref
+    0 4
+    0000000000 65535 f
+    0000000009 00000 n
+    0000000074 00000 n
+    0000000120 00000 n
+    trailer
+    << /Size 4 /Root 1 0 R >>
+    startxref
+    185
+    %%EOF
+    '''
+    
+            with patch('builtins.open', mock_open_binary(pdf_content)):
+>               result = scanner._pdf_steganography_analysis('/tmp/test.pdf')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SteganographyScanner' object has no attribute '_pdf_steganography_analysis'
+
+tests/test_steganography_scanner.py:227: AttributeError
+_______________ TestSteganographyScanner.test_frequency_analysis _______________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9a90>
+
+    def test_frequency_analysis(self):
+        """Test frequency analysis for steganography detection"""
+        scanner = SteganographyScanner()
+    
+        # Mock data with suspicious frequency patterns
+        data = b'A' * 500 + b'B' * 400 + b'C' * 100  # Uneven distribution
+    
+>       result = scanner._frequency_analysis(data)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SteganographyScanner' object has no attribute '_frequency_analysis'
+
+tests/test_steganography_scanner.py:241: AttributeError
+_____________ TestSteganographyScanner.test_generate_stego_report ______________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b9700>
+
+    def test_generate_stego_report(self):
+        """Test steganography analysis report generation"""
+        scanner = SteganographyScanner()
+    
+        results = {
+            'file_discovery': {
+                'image_files': ['/tmp/test.jpg'],
+                'audio_files': ['/tmp/test.wav'],
+                'total_files': 2
+            },
+            'metadata_analysis': {
+                '/tmp/test.jpg': {
+                    'suspicious_metadata': True,
+                    'gps_coordinates': True
+                }
+            },
+            'statistical_analysis': {
+                '/tmp/test.jpg': {
+                    'chi_square': 2.5,
+                    'entropy': 6.5,
+                    'histogram_anomalies': True
+                }
+            },
+            'tool_detection': {
+                '/tmp/test.jpg': {
+                    'steghide': 'detected',
+                    'outguess': 'not_detected'
+                }
+            }
+        }
+    
+>       report = scanner._generate_stego_report(results)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SteganographyScanner' object has no attribute '_generate_stego_report'
+
+tests/test_steganography_scanner.py:278: AttributeError
+______ TestSteganographyScanner.test_calculate_steganography_probability _______
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b8800>
+
+    def test_calculate_steganography_probability(self):
+        """Test steganography probability calculation"""
+        scanner = SteganographyScanner()
+    
+        # Test high probability scenario
+        high_prob_analysis = {
+            'chi_square': 3.5,  # High chi-square indicates steganography
+            'entropy': 7.9,     # High entropy
+            'histogram_anomalies': True,
+            'metadata_suspicious': True,
+            'tool_signatures': ['steghide', 'outguess']
+        }
+    
+>       probability = scanner._calculate_steganography_probability(high_prob_analysis)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SteganographyScanner' object has no attribute '_calculate_steganography_probability'
+
+tests/test_steganography_scanner.py:298: AttributeError
+______________ TestSteganographyScanner.test_extract_hidden_data _______________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183b83b0>
+
+    def test_extract_hidden_data(self):
+        """Test hidden data extraction"""
+        scanner = SteganographyScanner()
+    
+        with patch('subprocess.run') as mock_subprocess:
+            # Mock successful steghide extraction
+            mock_subprocess.return_value.returncode = 0
+            mock_subprocess.return_value.stdout = b'Hidden message extracted successfully'
+    
+>           result = scanner._extract_hidden_data('/tmp/test.jpg', 'steghide')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SteganographyScanner' object has no attribute '_extract_hidden_data'. Did you mean: '_extract_metadata'?
+
+tests/test_steganography_scanner.py:322: AttributeError
+___________ TestSteganographyScanner.test_analyze_container_capacity ___________
+
+self = <tests.test_steganography_scanner.TestSteganographyScanner object at 0x7a74183ba180>
+
+    def test_analyze_container_capacity(self):
+        """Test container capacity analysis"""
+        scanner = SteganographyScanner()
+    
+>       with patch('PIL.Image.open') as mock_pil:
+
+tests/test_steganography_scanner.py:332: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1442: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+/usr/lib/python3.12/pkgutil.py:513: in resolve_name
+    mod = importlib.import_module(modname)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'PIL', import_ = <function _gcd_import at 0x7a742090c0e0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'PIL'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+_______________________ TestSystemCheckModule.test_init ________________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183baf60>
+
+    def test_init(self):
+        """Test SystemCheckModule initialization"""
+        scanner = SystemCheckModule()
+        assert scanner.name == "system_check"
+>       assert scanner.timeout == 60
+E       assert 30 == 60
+E        +  where 30 = <linuxscan.modules.system_check.SystemCheckModule object at 0x7a74164a6300>.timeout
+
+tests/test_system_check.py:20: AssertionError
+____________________ TestSystemCheckModule.test_scan_basic _____________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb110>
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self):
+        """Test basic system check scanning"""
+        scanner = SystemCheckModule()
+    
+>       with patch.object(scanner, '_system_info_check') as mock_info:
+
+tests/test_system_check.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a74164a6ba0>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.system_check.SystemCheckModule object at 0x7a74164a6cf0> does not have the attribute '_system_info_check'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+_________________ TestSystemCheckModule.test_system_info_check _________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb380>
+
+    @pytest.mark.asyncio
+    async def test_system_info_check(self):
+        """Test system information check"""
+        scanner = SystemCheckModule()
+    
+        with patch('subprocess.run') as mock_subprocess:
+            # Mock hostname command
+            mock_subprocess.side_effect = [
+                MagicMock(returncode=0, stdout=b'test-server\n'),
+                MagicMock(returncode=0, stdout=b'Ubuntu 20.04.3 LTS\n'),
+                MagicMock(returncode=0, stdout=b'5.4.0-74-generic\n'),
+                MagicMock(returncode=0, stdout=b'up 5 days, 10:30\n')
+            ]
+    
+>           result = await scanner._system_info_check('192.168.1.100')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SystemCheckModule' object has no attribute '_system_info_check'
+
+tests/test_system_check.py:73: AttributeError
+_______________ TestSystemCheckModule.test_service_status_check ________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb5c0>
+
+        @pytest.mark.asyncio
+        async def test_service_status_check(self):
+            """Test service status check"""
+            scanner = SystemCheckModule()
+    
+            with patch('subprocess.run') as mock_subprocess:
+                # Mock systemctl status output
+                mock_subprocess.return_value.returncode = 0
+                mock_subprocess.return_value.stdout = b'''
+    ssh.service - OpenBSD Secure Shell server
+         Loaded: loaded (/lib/systemd/system/ssh.service; enabled)
+         Active: active (running) since Mon 2023-01-01 10:00:00 UTC
+    apache2.service - The Apache HTTP Server
+         Loaded: loaded (/lib/systemd/system/apache2.service; enabled)
+         Active: active (running) since Mon 2023-01-01 10:00:00 UTC
+    mysql.service - MySQL Community Server
+         Loaded: loaded (/lib/systemd/system/mysql.service; enabled)
+         Active: inactive (dead)
+    '''
+    
+>               result = await scanner._service_status_check('192.168.1.100')
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SystemCheckModule' object has no attribute '_service_status_check'
+
+tests/test_system_check.py:100: AttributeError
+_______________ TestSystemCheckModule.test_security_config_check _______________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb800>
+
+    @pytest.mark.asyncio
+    async def test_security_config_check(self):
+        """Test security configuration check"""
+        scanner = SystemCheckModule()
+    
+        with patch('subprocess.run') as mock_subprocess:
+            # Mock various security command outputs
+            mock_subprocess.side_effect = [
+                MagicMock(returncode=0, stdout=b'Status: active\n'),  # ufw status
+                MagicMock(returncode=0, stdout=b'SELinux status: disabled\n'),  # sestatus
+                MagicMock(returncode=0, stdout=b'PASS_MAX_DAYS\t90\n'),  # login.defs
+                MagicMock(returncode=0, stdout=b'root:!:18900:0:99999:7:::\n')  # shadow
+            ]
+    
+>           result = await scanner._security_config_check('192.168.1.100')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'SystemCheckModule' object has no attribute '_security_config_check'
+
+tests/test_system_check.py:120: AttributeError
+__________ TestSystemCheckModule.test_analyze_system_vulnerabilities ___________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bba40>
+
+    def test_analyze_system_vulnerabilities(self):
+        """Test system vulnerability analysis"""
+        scanner = SystemCheckModule()
+    
+        system_info = {
+            'os': 'Ubuntu 18.04',
+            'kernel': '4.15.0-20-generic',
+            'installed_packages': ['openssh-server 1:7.6p1-4ubuntu0.1']
+        }
+    
+>       vulnerabilities = scanner._analyze_system_vulnerabilities(system_info)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SystemCheckModule' object has no attribute '_analyze_system_vulnerabilities'
+
+tests/test_system_check.py:137: AttributeError
+_______________ TestSystemCheckModule.test_check_file_integrity ________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bbbf0>
+
+    def test_check_file_integrity(self):
+        """Test file integrity check"""
+        scanner = SystemCheckModule()
+    
+        with patch('os.path.exists') as mock_exists:
+            mock_exists.return_value = True
+    
+            with patch('os.stat') as mock_stat:
+                mock_stat.return_value = MagicMock(st_mode=0o644, st_uid=0, st_gid=0)
+    
+                with patch('hashlib.sha256') as mock_hash:
+                    mock_hash.return_value.hexdigest.return_value = 'abc123'
+    
+>                   result = scanner._check_file_integrity(['/etc/passwd', '/etc/shadow'])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   AttributeError: 'SystemCheckModule' object has no attribute '_check_file_integrity'
+
+tests/test_system_check.py:155: AttributeError
+_______________ TestSystemCheckModule.test_analyze_user_accounts _______________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bbda0>
+
+        def test_analyze_user_accounts(self):
+            """Test user account analysis"""
+            scanner = SystemCheckModule()
+    
+            shadow_content = '''
+    root:!:18900:0:99999:7:::
+    daemon:*:18900:0:99999:7:::
+    bin:*:18900:0:99999:7:::
+    user1:$6$salt$hash:18900:0:99999:7:::
+    user2:!:18900:0:99999:7:::
+    '''
+    
+            passwd_content = '''
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+    bin:x:2:2:bin:/bin:/usr/sbin/nologin
+    user1:x:1000:1000:User One:/home/user1:/bin/bash
+    user2:x:1001:1001:User Two:/home/user2:/bin/bash
+    '''
+    
+            with patch('builtins.open', mock_open_multiple_files({
+                '/etc/shadow': shadow_content,
+                '/etc/passwd': passwd_content
+            })):
+>               result = scanner._analyze_user_accounts()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SystemCheckModule' object has no attribute '_analyze_user_accounts'
+
+tests/test_system_check.py:184: AttributeError
+____________ TestSystemCheckModule.test_check_network_configuration ____________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bbf50>
+
+        def test_check_network_configuration(self):
+            """Test network configuration check"""
+            scanner = SystemCheckModule()
+    
+            with patch('subprocess.run') as mock_subprocess:
+                # Mock network interface output
+                mock_subprocess.return_value.returncode = 0
+                mock_subprocess.return_value.stdout = b'''
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+        inet 127.0.0.1/8 scope host lo
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        inet 192.168.1.100/24 brd 192.168.1.255 scope global eth0
+    '''
+    
+>               result = scanner._check_network_configuration('192.168.1.100')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SystemCheckModule' object has no attribute '_check_network_configuration'
+
+tests/test_system_check.py:205: AttributeError
+_____________ TestSystemCheckModule.test_analyze_running_processes _____________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bbc20>
+
+        def test_analyze_running_processes(self):
+            """Test running process analysis"""
+            scanner = SystemCheckModule()
+    
+            with patch('subprocess.run') as mock_subprocess:
+                mock_subprocess.return_value.returncode = 0
+                mock_subprocess.return_value.stdout = b'''
+        PID TTY          TIME CMD
+          1 ?        00:00:01 systemd
+       1234 ?        00:00:00 sshd
+       5678 ?        00:00:00 apache2
+       9012 ?        00:00:00 suspicious_process
+    '''
+    
+>               result = scanner._analyze_running_processes('192.168.1.100')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SystemCheckModule' object has no attribute '_analyze_running_processes'
+
+tests/test_system_check.py:226: AttributeError
+_________________ TestSystemCheckModule.test_check_system_logs _________________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb890>
+
+        def test_check_system_logs(self):
+            """Test system log analysis"""
+            scanner = SystemCheckModule()
+    
+            log_content = '''
+    Jan 1 10:00:00 server sshd[1234]: Accepted password for user from 192.168.1.50 port 22
+    Jan 1 10:01:00 server sshd[1235]: Failed password for invalid user admin from 192.168.1.60 port 22
+    Jan 1 10:02:00 server sshd[1236]: Failed password for invalid user admin from 192.168.1.60 port 22
+    Jan 1 10:03:00 server kernel: Out of memory: Kill process 1237 (apache2) score 123
+    '''
+    
+            with patch('builtins.open', mock_open_multiple_files({
+                '/var/log/auth.log': log_content,
+                '/var/log/syslog': log_content
+            })):
+>               result = scanner._check_system_logs('192.168.1.100')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: 'SystemCheckModule' object has no attribute '_check_system_logs'
+
+tests/test_system_check.py:248: AttributeError
+__________ TestSystemCheckModule.test_generate_system_recommendations __________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb4d0>
+
+    def test_generate_system_recommendations(self):
+        """Test system recommendation generation"""
+        scanner = SystemCheckModule()
+    
+        results = {
+            'system_info': {
+                'os': 'Ubuntu 18.04',
+                'kernel': '4.15.0-20-generic'
+            },
+            'service_status': {
+                'running_services': ['ssh', 'apache2'],
+                'stopped_services': ['mysql'],
+                'failed_services': ['fail2ban']
+            },
+            'security_config': {
+                'firewall_status': 'inactive',
+                'selinux_status': 'disabled',
+                'password_policy': 'weak'
+            },
+            'vulnerability_analysis': {
+                'vulnerabilities': [
+                    {'type': 'Outdated OS', 'severity': 'High'},
+                    {'type': 'Weak Password Policy', 'severity': 'Medium'}
+                ]
+            }
+        }
+    
+>       recommendations = scanner._generate_system_recommendations(results)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SystemCheckModule' object has no attribute '_generate_system_recommendations'
+
+tests/test_system_check.py:282: AttributeError
+___________ TestSystemCheckModule.test_calculate_system_health_score ___________
+
+self = <tests.test_system_check.TestSystemCheckModule object at 0x7a74183bb1a0>
+
+    def test_calculate_system_health_score(self):
+        """Test system health score calculation"""
+        scanner = SystemCheckModule()
+    
+        # Test healthy system
+        healthy_results = {
+            'service_status': {
+                'failed_services': [],
+                'stopped_services': []
+            },
+            'security_config': {
+                'firewall_status': 'active',
+                'selinux_status': 'enforcing',
+                'password_policy': 'strong'
+            },
+            'vulnerability_analysis': {
+                'vulnerabilities': []
+            }
+        }
+    
+>       score = scanner._calculate_system_health_score(healthy_results)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'SystemCheckModule' object has no attribute '_calculate_system_health_score'
+
+tests/test_system_check.py:309: AttributeError
+_____________________ TestTrafficAnalysisScanner.test_init _____________________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dc0e0>
+
+    def test_init(self):
+        """Test TrafficAnalysisScanner initialization"""
+        scanner = TrafficAnalysisScanner()
+>       assert scanner.name == "traffic_scanner"
+E       AssertionError: assert 'traffic_analysis_scanner' == 'traffic_scanner'
+E         
+E         - traffic_scanner
+E         + traffic_analysis_scanner
+E         ?         +++++++++
+
+tests/test_traffic_scanner.py:19: AssertionError
+__________________ TestTrafficAnalysisScanner.test_scan_basic __________________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dc290>
+
+    @pytest.mark.asyncio
+    async def test_scan_basic(self):
+        """Test basic traffic scanning"""
+        scanner = TrafficAnalysisScanner()
+    
+>       with patch.object(scanner, '_packet_capture') as mock_capture:
+
+tests/test_traffic_scanner.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.12/unittest/mock.py:1458: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7a74166e9130>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <linuxscan.modules.traffic_scanner.TrafficAnalysisScanner object at 0x7a74166e8f80> does not have the attribute '_packet_capture'
+
+/usr/lib/python3.12/unittest/mock.py:1431: AttributeError
+________________ TestTrafficAnalysisScanner.test_packet_capture ________________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dc500>
+
+    @pytest.mark.asyncio
+    async def test_packet_capture(self):
+        """Test packet capture functionality"""
+        scanner = TrafficAnalysisScanner()
+    
+        with patch('scapy.all.sniff') as mock_sniff:
+            # Mock captured packets
+            mock_packets = [
+                MagicMock(src='192.168.1.100', dst='192.168.1.1', proto=6, len=64),
+                MagicMock(src='192.168.1.1', dst='192.168.1.100', proto=6, len=1500),
+                MagicMock(src='192.168.1.100', dst='8.8.8.8', proto=17, len=128)
+            ]
+            mock_sniff.return_value = mock_packets
+    
+>           result = await scanner._packet_capture('eth0', duration=10)
+                           ^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'TrafficAnalysisScanner' object has no attribute '_packet_capture'
+
+tests/test_traffic_scanner.py:78: AttributeError
+_____________ TestTrafficAnalysisScanner.test_analyze_http_traffic _____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dc740>
+
+    def test_analyze_http_traffic(self):
+        """Test HTTP traffic analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock HTTP packets
+        http_packets = [
+            MagicMock(
+                src='192.168.1.100',
+                dst='192.168.1.1',
+                dport=80,
+                payload='GET /index.html HTTP/1.1\r\nHost: example.com\r\n\r\n'
+            ),
+            MagicMock(
+                src='192.168.1.1',
+                dst='192.168.1.100',
+                sport=80,
+                payload='HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html></html>'
+            )
+        ]
+    
+>       result = scanner._analyze_http_traffic(http_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: TrafficAnalysisScanner._analyze_http_traffic() missing 1 required positional argument: 'results'
+
+tests/test_traffic_scanner.py:105: TypeError
+_____________ TestTrafficAnalysisScanner.test_analyze_dns_traffic ______________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dc8f0>
+
+    def test_analyze_dns_traffic(self):
+        """Test DNS traffic analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock DNS packets
+        dns_packets = [
+            MagicMock(
+                src='192.168.1.100',
+                dst='8.8.8.8',
+                dport=53,
+                qd=MagicMock(qname='example.com', qtype=1)
+            ),
+            MagicMock(
+                src='8.8.8.8',
+                dst='192.168.1.100',
+                sport=53,
+                an=MagicMock(rdata='192.168.1.50')
+            )
+        ]
+    
+>       result = scanner._analyze_dns_traffic(dns_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: TrafficAnalysisScanner._analyze_dns_traffic() missing 1 required positional argument: 'results'
+
+tests/test_traffic_scanner.py:133: TypeError
+__________ TestTrafficAnalysisScanner.test_detect_suspicious_patterns __________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dcaa0>
+
+    def test_detect_suspicious_patterns(self):
+        """Test suspicious pattern detection"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock packets with suspicious patterns
+        suspicious_packets = [
+            MagicMock(
+                src='192.168.1.100',
+                dst='10.0.0.1',
+                payload='GET /../../etc/passwd HTTP/1.1'
+            ),
+            MagicMock(
+                src='192.168.1.100',
+                dst='192.168.1.1',
+                payload='<script>alert("XSS")</script>'
+            ),
+            MagicMock(
+                src='192.168.1.100',
+                dst='8.8.8.8',
+                dport=53,
+                qd=MagicMock(qname='malware.com')
+            )
+        ]
+    
+>       result = scanner._detect_suspicious_patterns(suspicious_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_detect_suspicious_patterns'. Did you mean: 'suspicious_patterns'?
+
+tests/test_traffic_scanner.py:165: AttributeError
+___________ TestTrafficAnalysisScanner.test_analyze_bandwidth_usage ____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dcc50>
+
+    def test_analyze_bandwidth_usage(self):
+        """Test bandwidth usage analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock packets with size information
+        packets = [
+            MagicMock(src='192.168.1.100', dst='192.168.1.1', len=1500),
+            MagicMock(src='192.168.1.1', dst='192.168.1.100', len=64),
+            MagicMock(src='192.168.1.100', dst='8.8.8.8', len=128),
+            MagicMock(src='8.8.8.8', dst='192.168.1.100', len=512)
+        ]
+    
+>       result = scanner._analyze_bandwidth_usage(packets, duration=60)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_analyze_bandwidth_usage'
+
+tests/test_traffic_scanner.py:184: AttributeError
+______________ TestTrafficAnalysisScanner.test_detect_port_scans _______________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dce00>
+
+    def test_detect_port_scans(self):
+        """Test port scan detection"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock packets indicating port scan
+        scan_packets = []
+        for port in range(1, 1000, 10):  # Simulate scanning every 10th port
+            scan_packets.append(MagicMock(
+                src='192.168.1.200',
+                dst='192.168.1.100',
+                dport=port,
+                flags=2  # SYN flag
+            ))
+    
+>       result = scanner._detect_port_scans(scan_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_detect_port_scans'
+
+tests/test_traffic_scanner.py:205: AttributeError
+_________ TestTrafficAnalysisScanner.test_analyze_connection_patterns __________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dcfb0>
+
+    def test_analyze_connection_patterns(self):
+        """Test connection pattern analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock connection packets
+        connection_packets = [
+            MagicMock(src='192.168.1.100', dst='192.168.1.1', sport=12345, dport=80, flags=2),  # SYN
+            MagicMock(src='192.168.1.1', dst='192.168.1.100', sport=80, dport=12345, flags=18),  # SYN-ACK
+            MagicMock(src='192.168.1.100', dst='192.168.1.1', sport=12345, dport=80, flags=16),  # ACK
+            MagicMock(src='192.168.1.100', dst='192.168.1.1', sport=12345, dport=80, flags=1),   # FIN
+        ]
+    
+>       result = scanner._analyze_connection_patterns(connection_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: TrafficAnalysisScanner._analyze_connection_patterns() missing 1 required positional argument: 'anomalies'
+
+tests/test_traffic_scanner.py:223: TypeError
+_____________ TestTrafficAnalysisScanner.test_detect_ddos_patterns _____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd160>
+
+    def test_detect_ddos_patterns(self):
+        """Test DDoS pattern detection"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock DDoS-like traffic
+        ddos_packets = []
+        for i in range(1000):
+            ddos_packets.append(MagicMock(
+                src=f'192.168.1.{i % 254 + 1}',
+                dst='192.168.1.100',
+                dport=80,
+                flags=2
+            ))
+    
+>       result = scanner._detect_ddos_patterns(ddos_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_detect_ddos_patterns'
+
+tests/test_traffic_scanner.py:244: AttributeError
+________ TestTrafficAnalysisScanner.test_analyze_protocol_distribution _________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd310>
+
+    def test_analyze_protocol_distribution(self):
+        """Test protocol distribution analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock packets with different protocols
+        protocol_packets = [
+            MagicMock(proto=6, len=1500),  # TCP
+            MagicMock(proto=6, len=64),    # TCP
+            MagicMock(proto=17, len=128),  # UDP
+            MagicMock(proto=1, len=56),    # ICMP
+        ]
+    
+>       result = scanner._analyze_protocol_distribution(protocol_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_analyze_protocol_distribution'
+
+tests/test_traffic_scanner.py:263: AttributeError
+____________ TestTrafficAnalysisScanner.test_extract_file_transfers ____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd4c0>
+
+    def test_extract_file_transfers(self):
+        """Test file transfer extraction"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock HTTP file transfer packets
+        file_packets = [
+            MagicMock(
+                src='192.168.1.100',
+                dst='192.168.1.1',
+                payload='GET /download/file.exe HTTP/1.1\r\nHost: example.com\r\n\r\n'
+            ),
+            MagicMock(
+                src='192.168.1.1',
+                dst='192.168.1.100',
+                payload='HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 1024000\r\n\r\nMZ...'
+            )
+        ]
+    
+>       result = scanner._extract_file_transfers(file_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_extract_file_transfers'
+
+tests/test_traffic_scanner.py:289: AttributeError
+___________ TestTrafficAnalysisScanner.test_generate_traffic_report ____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd670>
+
+    def test_generate_traffic_report(self):
+        """Test traffic analysis report generation"""
+        scanner = TrafficAnalysisScanner()
+    
+        results = {
+            'packet_capture': {
+                'total_packets': 1000,
+                'capture_duration': 60,
+                'packets_per_second': 16.67
+            },
+            'protocol_analysis': {
+                'http': {'requests': 100, 'responses': 95},
+                'dns': {'queries': 50, 'responses': 48},
+                'tcp': {'connections': 25, 'established': 20}
+            },
+            'traffic_analysis': {
+                'bandwidth_usage': 1024000,
+                'top_talkers': [{'ip': '192.168.1.100', 'bytes': 500000}],
+                'suspicious_flows': []
+            },
+            'security_analysis': {
+                'suspicious_patterns': {
+                    'sql_injection': 2,
+                    'xss_attempts': 1,
+                    'port_scans': 3
+                }
+            }
+        }
+    
+>       report = scanner._generate_traffic_report(results)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_generate_traffic_report'
+
+tests/test_traffic_scanner.py:325: AttributeError
+____________ TestTrafficAnalysisScanner.test_calculate_threat_score ____________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd820>
+
+    def test_calculate_threat_score(self):
+        """Test threat score calculation"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Test high threat scenario
+        high_threat_analysis = {
+            'suspicious_patterns': {
+                'sql_injection': 10,
+                'xss_attempts': 5,
+                'directory_traversal': 8
+            },
+            'ddos_patterns': {
+                'ddos_detected': True,
+                'attack_type': 'SYN flood'
+            },
+            'port_scans': {
+                'port_scans': [
+                    {'source': '192.168.1.200', 'ports_scanned': 1000}
+                ]
+            }
+        }
+    
+>       score = scanner._calculate_threat_score(high_threat_analysis)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_calculate_threat_score'
+
+tests/test_traffic_scanner.py:354: AttributeError
+__________ TestTrafficAnalysisScanner.test_analyze_encrypted_traffic ___________
+
+self = <tests.test_traffic_scanner.TestTrafficAnalysisScanner object at 0x7a74183dd9d0>
+
+    def test_analyze_encrypted_traffic(self):
+        """Test encrypted traffic analysis"""
+        scanner = TrafficAnalysisScanner()
+    
+        # Mock encrypted traffic packets
+        encrypted_packets = [
+            MagicMock(
+                src='192.168.1.100',
+                dst='192.168.1.1',
+                dport=443,
+                payload=b'\x16\x03\x01\x00\x1a...'  # TLS handshake
+            ),
+            MagicMock(
+                src='192.168.1.100',
+                dst='192.168.1.1',
+                dport=22,
+                payload=b'SSH-2.0-OpenSSH_7.4'
+            )
+        ]
+    
+>       result = scanner._analyze_encrypted_traffic(encrypted_packets)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'TrafficAnalysisScanner' object has no attribute '_analyze_encrypted_traffic'. Did you mean: '_analyze_dns_traffic'?
+
+tests/test_traffic_scanner.py:395: AttributeError
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_cli.py: linuxscan.cli module does not exist
+SKIPPED [1] tests/test_crypto_scanner.py:37: Method _ssl_tls_analysis not implemented in CryptoSecurityScanner
+SKIPPED [1] tests/test_enhanced_cli.py: Some enhanced CLI functions do not exist
+FAILED tests/test_crypto_scanner.py::TestCryptoSecurityScanner::test_check_certificate_validity
+FAILED tests/test_crypto_scanner.py::TestCryptoSecurityScanner::test_check_key_strength
+FAILED tests/test_crypto_scanner.py::TestCryptoSecurityScanner::test_check_hsts_support
+FAILED tests/test_crypto_scanner.py::TestCryptoSecurityScanner::test_compile_crypto_recommendations
+FAILED tests/test_crypto_scanner.py::TestCryptoSecurityScanner::test_calculate_crypto_score
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_init - Assertion...
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_scan_basic - Att...
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_device_discovery
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_fingerprint_device
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_mqtt_analysis - ...
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_coap_analysis - ...
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_analyze_iot_vulnerabilities
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_check_firmware_vulnerabilities
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_detect_iot_protocols
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_generate_iot_recommendations
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_calculate_iot_risk_score
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_scan_iot_ports
+FAILED tests/test_iot_scanner.py::TestIoTDeviceScanner::test_extract_device_info
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_init - A...
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_scan_basic
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_memory_acquisition
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_volatility_analysis
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_analyze_process_list
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_detect_process_injection
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_analyze_network_connections
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_detect_rootkit_indicators
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_analyze_syscall_table
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_extract_memory_artifacts
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_analyze_heap_spray
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_detect_code_injection
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_analyze_driver_integrity
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_generate_memory_report
+FAILED tests/test_memory_scanner.py::TestMemoryAnalysisScanner::test_calculate_memory_risk_score
+FAILED tests/test_scanner.py::TestSecurityScanner::test_analyze_vulnerabilities_ssh
+FAILED tests/test_scanner.py::TestSecurityScanner::test_analyze_vulnerabilities_ssl
+FAILED tests/test_scanner.py::TestSecurityScanner::test_calculate_security_score_high
+FAILED tests/test_scanner.py::TestSecurityScanner::test_calculate_security_score_low
+FAILED tests/test_scanner.py::TestSecurityScanner::test_export_json - Attribu...
+FAILED tests/test_scanner.py::TestSecurityScanner::test_export_csv - Attribut...
+FAILED tests/test_scanner.py::TestSecurityScanner::test_export_html - Attribu...
+FAILED tests/test_scanner.py::TestSecurityScanner::test_generate_summary_table
+FAILED tests/test_scanner.py::TestSecurityScanner::test_scan_network_single_target
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_init
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_scan_basic
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_file_discovery
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_analyze_file_metadata
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_statistical_analysis
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_detect_steganography_tools
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_analyze_image_histogram
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_lsb_analysis
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_detect_hidden_archives
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_analyze_audio_steganography
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_pdf_steganography_analysis
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_frequency_analysis
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_generate_stego_report
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_calculate_steganography_probability
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_extract_hidden_data
+FAILED tests/test_steganography_scanner.py::TestSteganographyScanner::test_analyze_container_capacity
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_init - assert ...
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_scan_basic - A...
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_system_info_check
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_service_status_check
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_security_config_check
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_analyze_system_vulnerabilities
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_check_file_integrity
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_analyze_user_accounts
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_check_network_configuration
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_analyze_running_processes
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_check_system_logs
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_generate_system_recommendations
+FAILED tests/test_system_check.py::TestSystemCheckModule::test_calculate_system_health_score
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_init
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_scan_basic
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_packet_capture
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_http_traffic
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_dns_traffic
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_detect_suspicious_patterns
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_bandwidth_usage
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_detect_port_scans
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_connection_patterns
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_detect_ddos_patterns
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_protocol_distribution
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_extract_file_transfers
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_generate_traffic_report
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_calculate_threat_score
+FAILED tests/test_traffic_scanner.py::TestTrafficAnalysisScanner::test_analyze_encrypted_traffic
+============ 86 failed, 104 passed, 3 skipped, 8 warnings in 8.28s =============
