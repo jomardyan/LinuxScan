@@ -41,7 +41,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.live import Live
 from rich.layout import Layout
-from rich.progress import Progress, TaskID
+from rich.progress import Progress, TaskID, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
 from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.columns import Columns
 from rich.align import Align
@@ -71,24 +71,30 @@ class LinuxScanGUI:
         self.scan_in_progress = False
         self.scan_paused = False
         self.scan_thread = None
+        self.return_to_main_menu = False
+        self.navigation_context = []
+        self.system_info_cache = None
+        self.system_info_cache_time = 0
         self.setup_signal_handlers()
         
     def setup_signal_handlers(self):
         """Setup signal handlers for keyboard shortcuts"""
         signal.signal(signal.SIGINT, self.handle_ctrl_c)
         signal.signal(signal.SIGTSTP, self.handle_ctrl_z)
+        # Note: Ctrl+M (return to main menu) is handled in the main input loop
         
     def handle_ctrl_c(self, signum, frame):
-        """Handle Ctrl+C - Stop scan"""
+        """Handle Ctrl+C - Stop scan and return to main menu"""
         if self.scan_in_progress:
             console.print("\n[bold red]🛑 Scan stopped by user (Ctrl+C)[/bold red]")
             self.scan_in_progress = False
             self.scan_paused = False
             if self.scan_thread:
                 self.scan_thread.join(timeout=1)
+            self.return_to_main_menu = True
         else:
-            console.print("\n[bold red]Exiting LinuxScan...[/bold red]")
-            sys.exit(0)
+            console.print("\n[bold red]🏠 Returning to main menu (Ctrl+C)[/bold red]")
+            self.return_to_main_menu = True
             
     def handle_ctrl_z(self, signum, frame):
         """Handle Ctrl+Z - Pause/Resume scan"""
@@ -99,18 +105,50 @@ class LinuxScanGUI:
             else:
                 console.print("\n[bold yellow]⏸️  Scan paused (Ctrl+Z to resume)[/bold yellow]")
                 self.scan_paused = True
+        else:
+            console.print("\n[bold yellow]⏸️  No active scan to pause[/bold yellow]")
+            
+    def check_keyboard_shortcuts(self, input_text: str) -> bool:
+        """Check for keyboard shortcuts in input text"""
+        if input_text.lower() in ['ctrl+m', 'm', 'main', 'menu', 'home']:
+            console.print("\n[bold green]🏠 Returning to main menu[/bold green]")
+            self.return_to_main_menu = True
+            return True
+        return False
+        
+    def add_navigation_breadcrumb(self, location: str):
+        """Add location to navigation breadcrumbs"""
+        self.navigation_context.append(location)
+        
+    def remove_navigation_breadcrumb(self):
+        """Remove last location from navigation breadcrumbs"""
+        if self.navigation_context:
+            self.navigation_context.pop()
+            
+    def get_navigation_breadcrumbs(self) -> str:
+        """Get current navigation breadcrumbs as string"""
+        if not self.navigation_context:
+            return "[bold cyan]LinuxScan[/bold cyan]"
+        return " > ".join(["[bold cyan]LinuxScan[/bold cyan]"] + [f"[yellow]{ctx}[/yellow]" for ctx in self.navigation_context])
         
     def clear_screen(self):
         """Clear the console screen"""
         console.clear()
         
     def get_system_info(self):
-        """Get basic system information"""
+        """Get basic system information with caching"""
+        current_time = time.time()
+        
+        # Use cached info if it's less than 30 seconds old
+        if (self.system_info_cache and 
+            current_time - self.system_info_cache_time < 30):
+            return self.system_info_cache
+        
         try:
             # Get CPU information
             cpu_count = psutil.cpu_count()
             cpu_freq = psutil.cpu_freq()
-            cpu_usage = psutil.cpu_percent(interval=1)
+            cpu_usage = psutil.cpu_percent(interval=0.1)  # Reduced interval for speed
             
             # Get memory information
             memory = psutil.virtual_memory()
@@ -126,15 +164,15 @@ class LinuxScanGUI:
             disk_used = disk.used / (1024**3)  # GB
             disk_percent = (disk.used / disk.total) * 100
             
-            # Get network interfaces
-            net_interfaces = list(psutil.net_if_addrs().keys())
+            # Get network interfaces (limit to 5 for speed)
+            net_interfaces = list(psutil.net_if_addrs().keys())[:5]
             
             # Get environment information
             python_version = sys.version.split()[0]
             platform_info = platform.platform()
             hostname = platform.node()
             
-            return {
+            system_info = {
                 'cpu': {
                     'count': cpu_count,
                     'frequency': cpu_freq.current if cpu_freq else 0,
@@ -153,7 +191,7 @@ class LinuxScanGUI:
                     'percent': disk_percent
                 },
                 'network': {
-                    'interfaces': net_interfaces[:5]  # Show first 5 interfaces
+                    'interfaces': net_interfaces
                 },
                 'environment': {
                     'python_version': python_version,
@@ -161,6 +199,13 @@ class LinuxScanGUI:
                     'hostname': hostname
                 }
             }
+            
+            # Cache the result
+            self.system_info_cache = system_info
+            self.system_info_cache_time = current_time
+            
+            return system_info
+            
         except Exception as e:
             return {'error': str(e)}
             
@@ -291,11 +336,16 @@ class LinuxScanGUI:
             return f"[red]Error displaying IP info: {e}[/red]"
         
     def display_main_menu(self):
-        """Display the main menu"""
+        """Display the main menu with optimized rendering"""
         self.clear_screen()
+        self.navigation_context = []  # Reset navigation context
         display_banner()
         
-        # Display system information
+        # Display navigation breadcrumbs
+        breadcrumbs = self.get_navigation_breadcrumbs()
+        console.print(f"\n📍 {breadcrumbs}")
+        
+        # Display system information (cached)
         system_info = self.display_system_info()
         system_panel = Panel.fit(
             system_info,
@@ -306,20 +356,8 @@ class LinuxScanGUI:
         console.print(system_panel)
         console.print()
         
-        # Display disclaimer and keyboard shortcuts
-        disclaimer_panel = Panel.fit(
-            """[bold red]⚠️  LEGAL DISCLAIMER[/bold red]
-[yellow]FOR EDUCATIONAL & AUTHORIZED TESTING ONLY[/yellow]
-Use only on systems you own or have explicit written permission to test.
-Unauthorized scanning is illegal and prohibited. Users accept full responsibility.""",
-            title="Important Notice",
-            border_style="red",
-            padding=(0, 1)
-        )
-        console.print(disclaimer_panel)
-        console.print()
-        
-        shortcuts_info = """[bold cyan]Keyboard Shortcuts:[/bold cyan] [yellow]Ctrl+C[/yellow] = Stop scan | [yellow]Ctrl+Z[/yellow] = Pause/Resume scan"""
+        # Display enhanced shortcuts info
+        shortcuts_info = """[bold cyan]🎯 Quick Navigation:[/bold cyan] [yellow]Ctrl+C[/yellow] = Main Menu | [yellow]Ctrl+Z[/yellow] = Pause/Resume | [yellow]'m' or 'main'[/yellow] = Main Menu"""
         console.print(shortcuts_info)
         console.print()
         
@@ -362,20 +400,87 @@ Select an option:
         console.print(menu_panel)
         
     def get_menu_choice(self) -> int:
-        """Get user menu choice"""
+        """Get user menu choice with keyboard shortcut support"""
+        while True:
+            try:
+                choice_input = Prompt.ask(
+                    "Enter your choice (or 'm' for main menu)",
+                    default="1"
+                )
+                
+                # Check for keyboard shortcuts
+                if self.check_keyboard_shortcuts(choice_input):
+                    return -1  # Special value to indicate return to main menu
+                    
+                # Try to parse as integer
+                try:
+                    choice = int(choice_input)
+                    if 0 <= choice <= 24:
+                        return choice
+                    else:
+                        console.print("[red]Please enter a number between 0 and 24[/red]")
+                except ValueError:
+                    console.print("[red]Please enter a valid number or 'm' for main menu[/red]")
+                    
+            except KeyboardInterrupt:
+                return -1  # Return to main menu on Ctrl+C
+            
+    def show_post_scan_menu(self, scan_type: str) -> str:
+        """Show post-scan menu with options to continue or return"""
+        console.print(f"\n[bold green]✅ {scan_type} completed successfully![/bold green]")
+        
+        post_scan_panel = Panel.fit(
+            """
+[bold cyan]What would you like to do next?[/bold cyan]
+
+[bold green]1.[/bold green] View detailed results
+[bold green]2.[/bold green] Run another scan of the same type
+[bold green]3.[/bold green] Export results to file
+[bold green]4.[/bold green] Return to scan menu
+[bold green]5.[/bold green] Return to main menu
+[bold green]6.[/bold green] Exit LinuxScan
+
+[bold yellow]Or press Enter to continue...[/bold yellow]
+            """,
+            title="📋 Post-Scan Options",
+            border_style="green",
+            padding=(1, 2)
+        )
+        
+        console.print(post_scan_panel)
+        
         try:
-            choice = IntPrompt.ask(
-                "Enter your choice",
-                choices=[str(i) for i in range(0, 25)],
-                default=1
+            choice = Prompt.ask(
+                "Select option",
+                choices=["1", "2", "3", "4", "5", "6", ""],
+                default=""
             )
+            
             return choice
         except KeyboardInterrupt:
-            return 0
+            return "5"  # Return to main menu on Ctrl+C
             
+    def enhanced_input(self, prompt: str, default: str = "", choices: list = None) -> str:
+        """Enhanced input with keyboard shortcut support"""
+        while True:
+            try:
+                if choices:
+                    user_input = Prompt.ask(prompt, choices=choices, default=default)
+                else:
+                    user_input = Prompt.ask(prompt, default=default)
+                    
+                # Check for keyboard shortcuts
+                if self.check_keyboard_shortcuts(user_input):
+                    return "main_menu"  # Special value to indicate return to main menu
+                    
+                return user_input
+                
+            except KeyboardInterrupt:
+                return "main_menu"
     def get_target_input(self) -> List[str]:
-        """Get target input from user"""
+        """Get target input from user with enhanced navigation"""
         console.print("\n[bold cyan]Target Configuration[/bold cyan]")
+        self.add_navigation_breadcrumb("Target Configuration")
         
         target_options = Panel.fit(
             """
@@ -385,18 +490,27 @@ Select an option:
 • CIDR: 192.168.1.0/24
 • Hostname: example.com
 • Multiple: 192.168.1.1,example.com,10.0.0.0/24
+
+[bold cyan]Quick Options:[/bold cyan]
+• Type 'm' or 'main' to return to main menu
+• Press Ctrl+C to cancel and return to main menu
             """,
             title="Target Options",
             border_style="yellow"
         )
         console.print(target_options)
         
-        targets = Prompt.ask("\n[bold green]Enter target(s)")
+        targets = self.enhanced_input("\n[bold green]Enter target(s)")
+        
+        if targets == "main_menu":
+            self.return_to_main_menu = True
+            return []
         
         if not targets.strip():
             console.print("[red]No targets specified![/red]")
             return []
-            
+        
+        self.remove_navigation_breadcrumb()
         return [target.strip() for target in targets.split(',') if target.strip()]
     
     def select_scan_modules(self) -> List[str]:
@@ -495,30 +609,137 @@ Select an option:
         return config
     
     def quick_scan(self):
-        """Perform a quick scan"""
+        """Perform a quick scan with enhanced navigation"""
         console.print("\n[bold green]🚀 Quick Scan[/bold green]")
+        self.add_navigation_breadcrumb("Quick Scan")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
             
         modules = ['port_scanner', 'vulnerability_scanner']
         config = {'timeout': 5, 'max_workers': 50, 'verbose': False}
         
         self.run_scan(targets, modules, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Quick Scan")
+        
+        if choice == "1":
+            if self.current_scan_results:
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.quick_scan()  # Recursive call for another scan
+            return
+        elif choice == "3":
+            self.export_scan_results()
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
+    def export_scan_results(self):
+        """Export current scan results with user-friendly interface"""
+        if not self.current_scan_results:
+            console.print("[yellow]No scan results available to export[/yellow]")
+            return
+            
+        console.print("\n[bold cyan]📤 Export Scan Results[/bold cyan]")
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"linuxscan_results_{timestamp}.json"
+        
+        export_panel = Panel.fit(
+            """
+[bold yellow]Export Options:[/bold yellow]
+• JSON: Machine-readable, structured data
+• CSV: Spreadsheet-compatible format
+• HTML: Web-friendly report format
+• TXT: Human-readable plain text
+
+[bold cyan]Quick tip:[/bold cyan] JSON format is recommended for further analysis
+            """,
+            title="Export Configuration",
+            border_style="cyan"
+        )
+        console.print(export_panel)
+        
+        filename = self.enhanced_input(
+            "Export filename",
+            default=default_filename
+        )
+        
+        if filename == "main_menu":
+            return
+        
+        format_choice = self.enhanced_input(
+            "Export format",
+            choices=["json", "csv", "html", "txt"],
+            default="json"
+        )
+        
+        if format_choice == "main_menu":
+            return
+            
+        try:
+            self.export_results(self.current_scan_results, filename, format_choice)
+            console.print(f"[green]✅ Results exported successfully to {filename}[/green]")
+        except Exception as e:
+            console.print(f"[red]❌ Export failed: {e}[/red]")
+        
+        input("\nPress Enter to continue...")
     def advanced_scan(self):
-        """Perform an advanced scan with custom configuration"""
+        """Perform an advanced scan with custom configuration and enhanced navigation"""
         console.print("\n[bold green]🔧 Advanced Scan[/bold green]")
+        self.add_navigation_breadcrumb("Advanced Scan")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
             
         modules = self.select_scan_modules()
+        if self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
+            return
+            
         config = self.configure_scan_options()
+        if self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
+            return
         
         self.run_scan(targets, modules, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Advanced Scan")
+        
+        if choice == "1":
+            if self.current_scan_results:
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.advanced_scan()  # Recursive call for another scan
+            return
+        elif choice == "3":
+            self.export_scan_results()
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
     def vulnerability_assessment(self):
         """Perform comprehensive vulnerability assessment"""
@@ -826,7 +1047,7 @@ Ensure you have permission before scanning systems.
         input("\nPress Enter to continue...")
     
     def run_scan(self, targets: List[str], modules: List[str], config: Dict[str, Any]):
-        """Execute a security scan with progress display"""
+        """Execute a security scan with progress display and enhanced control"""
         self.scan_in_progress = True
         self.scan_paused = False
         
@@ -836,7 +1057,7 @@ Ensure you have permission before scanning systems.
         console.print(f"\n[bold green]🔍 Starting Scan[/bold green]")
         console.print(f"[blue]Targets: {', '.join(targets)}[/blue]")
         console.print(f"[blue]Modules: {', '.join(str(m) for m in modules)}[/blue]")
-        console.print(f"[yellow]Keyboard Shortcuts: Ctrl+C = Stop, Ctrl+Z = Pause/Resume[/yellow]")
+        console.print(f"[yellow]🎯 Shortcuts: Ctrl+C = Main Menu, Ctrl+Z = Pause/Resume, 'm' = Main Menu[/yellow]")
         
         # Initialize scanner
         self.scanner = SecurityScanner(
@@ -872,8 +1093,8 @@ Ensure you have permission before scanning systems.
                         
                         # Scan each target individually for better control
                         for i, target in enumerate(targets):
-                            # Check if scan should be stopped
-                            if not self.scan_in_progress:
+                            # Check if scan should be stopped or return to main menu
+                            if not self.scan_in_progress or self.return_to_main_menu:
                                 break
                                 
                             # Handle pause state
@@ -930,8 +1151,10 @@ Ensure you have permission before scanning systems.
                 # Get results from the scan thread
                 results = scan_results
             
-            if self.scan_in_progress:
+            if self.scan_in_progress and not self.return_to_main_menu:
                 console.print("\n[green]✅ Scan completed![/green]")
+            elif self.return_to_main_menu:
+                console.print("\n[yellow]🏠 Returning to main menu...[/yellow]")
             else:
                 console.print("\n[yellow]⚠️  Scan stopped by user[/yellow]")
             
@@ -939,11 +1162,12 @@ Ensure you have permission before scanning systems.
             self.current_scan_results = results
             
             # Export results if requested
-            if config.get('output_file'):
+            if config.get('output_file') and not self.return_to_main_menu:
                 self.export_results(results, config['output_file'], config.get('output_format', 'json'))
             
-            # Display results
-            self.display_scan_results(results)
+            # Display results if not returning to main menu
+            if not self.return_to_main_menu:
+                self.display_scan_results(results)
             
         except KeyboardInterrupt:
             console.print("\n[red]Scan interrupted by user[/red]")
@@ -952,7 +1176,8 @@ Ensure you have permission before scanning systems.
         finally:
             self.scan_in_progress = False
         
-        input("\nPress Enter to continue...")
+        if not self.return_to_main_menu:
+            input("\nPress Enter to continue...")
     
     def display_scan_results(self, results: Dict[str, Any]):
         """Display scan results summary"""
@@ -2506,11 +2731,18 @@ Select option:
             console.print(f"[red]Failed to export results: {e}[/red]")
 
     def run(self):
-        """Main GUI loop - handles menu navigation and user interaction"""
+        """Main GUI loop - handles menu navigation and user interaction with enhanced navigation"""
         while True:
             try:
+                # Reset return to main menu flag
+                self.return_to_main_menu = False
+                
                 self.display_main_menu()
                 choice = self.get_menu_choice()
+                
+                # Handle special return to main menu choice
+                if choice == -1:
+                    continue
                 
                 if choice == 0:
                     console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
@@ -2552,25 +2784,84 @@ Select option:
                 elif choice == 18:
                     self.view_scan_history()
                 elif choice == 19:
-                    self.commands_and_scripts_menu()
+                    self.commands_scripts_menu()
                 elif choice == 20:
                     self.configuration_menu()
                 elif choice == 21:
-                    self.help_and_documentation()
+                    self.help_documentation()
                 elif choice == 22:
                     self.scan_sets_menu()
                 elif choice == 23:
                     self.fast_ping_scan()
                 elif choice == 24:
                     self.fast_ssh_scan()
+                
+                # Check if we should return to main menu
+                if self.return_to_main_menu:
+                    continue
                     
             except KeyboardInterrupt:
-                console.print("\n\n[bold red]Exiting LinuxScan...[/bold red]")
-                break
+                console.print("\n\n[bold green]🏠 Returning to main menu...[/bold green]")
+                continue
             except Exception as e:
                 console.print(f"\n[bold red]An error occurred: {e}[/bold red]")
                 console.print("[yellow]Please try again or contact support.[/yellow]")
+                
+                # Show error recovery options
+                error_recovery = self.show_error_recovery_menu()
+                if error_recovery == "exit":
+                    break
+                elif error_recovery == "main":
+                    continue
+                    
                 input("\nPress Enter to continue...")
+                
+    def show_error_recovery_menu(self) -> str:
+        """Show error recovery options"""
+        console.print("\n[bold yellow]⚠️  Error Recovery Options[/bold yellow]")
+        
+        recovery_panel = Panel.fit(
+            """
+[bold cyan]What would you like to do?[/bold cyan]
+
+[bold green]1.[/bold green] Return to main menu
+[bold green]2.[/bold green] View system information
+[bold green]3.[/bold green] Run system check
+[bold green]4.[/bold green] Exit LinuxScan
+
+[bold yellow]Press Enter to return to main menu[/bold yellow]
+            """,
+            title="🔧 Error Recovery",
+            border_style="yellow",
+            padding=(1, 2)
+        )
+        
+        console.print(recovery_panel)
+        
+        try:
+            choice = self.enhanced_input(
+                "Select option",
+                choices=["1", "2", "3", "4", ""],
+                default=""
+            )
+            
+            if choice == "1" or choice == "":
+                return "main"
+            elif choice == "2":
+                system_info = self.display_system_info()
+                console.print(system_info)
+                input("\nPress Enter to continue...")
+                return "main"
+            elif choice == "3":
+                self.system_check()
+                return "main"
+            elif choice == "4":
+                return "exit"
+            else:
+                return "main"
+                
+        except KeyboardInterrupt:
+            return "main"
 
     def scan_sets_menu(self):
         """Display scan sets menu with predefined scan combinations"""
