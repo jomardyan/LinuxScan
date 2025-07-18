@@ -21,38 +21,59 @@ Setup configuration for Linux Security Scanner
 import sys
 from setuptools import setup, find_packages
 from pathlib import Path
-from rich.console import Console
 
 # If no arguments provided, launch GUI setup
 if len(sys.argv) == 1:
-    console = Console()
-    console.print("🚀 Launching LinuxScan Interactive Setup...")
     try:
+        from rich.console import Console
+        console = Console()
+        console.print("🚀 Launching LinuxScan Interactive Setup...")
         # Add the project root to Python path for imports
         project_root = Path(__file__).parent
         sys.path.insert(0, str(project_root))
-        
         from linuxscan.gui import LinuxScanGUI
         gui = LinuxScanGUI()
         gui.run()
         sys.exit(0)
     except ImportError as e:
-        console.print(f"[red]Error loading GUI: {e}[/red]")
-        console.print("[yellow]GUI mode requires all dependencies to be installed[/yellow]")
-        console.print("[cyan]Install dependencies first:[/cyan]")
-        console.print("  pip install -r requirements.txt")
-        console.print("\n[cyan]Or run setup with a command:[/cyan]")
-        console.print("  python setup.py install")
-        console.print("  python setup.py develop")
-        console.print("  python setup.py --help")
+        try:
+            from rich.console import Console
+            console = Console()
+            console.print(f"[red]Error loading GUI: {e}[/red]")
+            console.print("[yellow]GUI mode requires all dependencies to be installed[/yellow]")
+            console.print("[cyan]Install dependencies first:[/cyan]")
+            console.print("  pip install -r requirements.txt")
+            console.print("\n[cyan]Or run setup with a command:[/cyan]")
+            console.print("  python setup.py install")
+            console.print("  python setup.py develop")
+            console.print("  python setup.py --help")
+        except Exception:
+            print(f"Error loading GUI: {e}")
+            print("GUI mode requires all dependencies to be installed")
+            print("Install dependencies first:")
+            print("  pip install -r requirements.txt")
+            print("\nOr run setup with a command:")
+            print("  python setup.py install")
+            print("  python setup.py develop")
+            print("  python setup.py --help")
         sys.exit(1)
     except Exception as e:
-        console.print(f"[red]Error launching GUI: {e}[/red]")
-        console.print("[yellow]Falling back to standard setup usage...[/yellow]")
-        console.print("[cyan]Available commands:[/cyan]")
-        console.print("  python setup.py install")
-        console.print("  python setup.py develop")
-        console.print("  python setup.py --help")
+        try:
+            from rich.console import Console
+            console = Console()
+            console.print(f"[red]Error launching GUI: {e}[/red]")
+            console.print("[yellow]Falling back to standard setup usage...[/yellow]")
+            console.print("[cyan]Available commands:[/cyan]")
+            console.print("  python setup.py install")
+            console.print("  python setup.py develop")
+            console.print("  python setup.py --help")
+        except Exception:
+            print(f"Error launching GUI: {e}")
+            print("Falling back to standard setup usage...")
+            print("Available commands:")
+            print("  python setup.py install")
+            print("  python setup.py develop")
+            print("  python setup.py --help")
         sys.exit(1)
 
 # Read the contents of README file

@@ -249,35 +249,62 @@ check_python_version() {
     success "Python version check passed: $python_version"
 }
 
-# Function to create virtual environment
+
+# Function to create and activate virtual environment with error handling
 setup_virtual_environment() {
     log "Setting up virtual environment..."
-    
     if [ ! -d "venv" ]; then
-        python3 -m venv venv
+        if ! python3 -m venv venv; then
+            error "Failed to create virtual environment. Attempting to repair Python venv packages."
+            local OS=$(detect_os)
+            case $OS in
+                ubuntu|debian)
+                    run_with_sudo apt-get install --reinstall -y python3-venv || true
+                    ;;
+                centos|rhel|fedora)
+                    run_with_sudo $PKG_MGR install -y python3-venv || true
+                    ;;
+                arch)
+                    run_with_sudo pacman -S --needed --noconfirm python-virtualenv || true
+                    ;;
+            esac
+            python3 -m venv venv || { error "Virtual environment creation failed after repair."; exit 1; }
+        fi
         log "Virtual environment created"
     fi
-    
     log "Activating virtual environment..."
+    # shellcheck disable=SC1091
     source venv/bin/activate
-    
     log "Upgrading pip..."
-    pip install --upgrade pip
-    
+    pip install --upgrade pip || { error "pip upgrade failed"; exit 1; }
     success "Virtual environment ready"
 }
 
-# Function to install Python packages
+# Function to install Python packages with error handling and broken package repair
 install_python_packages() {
     log "Installing Python dependencies..."
-    
     # Install wheel first for better compatibility
-    pip install wheel
-    
+    pip install wheel || { error "Failed to install wheel"; exit 1; }
     # Install requirements
     if [ -f "requirements.txt" ]; then
         log "Installing from requirements.txt..."
-        pip install -r requirements.txt
+        if ! pip install -r requirements.txt; then
+            error "pip install failed. Attempting to repair broken packages."
+            local OS=$(detect_os)
+            case $OS in
+                ubuntu|debian)
+                    run_with_sudo apt-get install -f -y || true
+                    run_with_sudo dpkg --configure -a || true
+                    ;;
+                centos|rhel|fedora)
+                    run_with_sudo $PKG_MGR check || true
+                    ;;
+                arch)
+                    run_with_sudo pacman -Syu --noconfirm || true
+                    ;;
+            esac
+            pip install -r requirements.txt || { error "pip install failed after repair."; exit 1; }
+        fi
     else
         warn "requirements.txt not found, installing essential packages manually..."
         pip install \
@@ -293,9 +320,8 @@ install_python_packages() {
             dnspython \
             pyyaml \
             requests \
-            urllib3
+            urllib3 || { error "Manual pip install failed"; exit 1; }
     fi
-    
     # Install optional packages (ignore errors)
     log "Installing optional packages..."
     pip install --ignore-installed \
@@ -308,7 +334,6 @@ install_python_packages() {
         python-magic \
         netifaces \
         python-whois || warn "Some optional packages failed to install"
-    
     success "Python packages installed"
 }
 
@@ -449,62 +474,96 @@ display_completion() {
     success "Setup completed successfully!"
 }
 
-# Main setup function
+# Main setup function with enhanced argument parsing and error handling
 main() {
     log "Starting LinuxScan setup..."
-    
-    # Check if we should install system packages
-    if [ "$1" = "--system-deps" ] || [ "$1" = "-s" ]; then
+    local INSTALL_SYSTEM_DEPS=0
+    local USE_VENV=0
+    local FORCE=0
+    local DRY_RUN=0
+    local VERBOSE=0
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --system-deps|-s)
+                INSTALL_SYSTEM_DEPS=1
+                ;;
+            --venv|-v)
+                USE_VENV=1
+                ;;
+            --force|-f)
+                FORCE=1
+                ;;
+            --dry-run|-d)
+                DRY_RUN=1
+                ;;
+            --verbose)
+                VERBOSE=1
+                ;;
+            --help|-h)
+                echo "LinuxScan Setup Script"
+                echo "Usage: $0 [options]"
+                echo
+                echo "Options:"
+                echo "  --system-deps, -s    Install system dependencies"
+                echo "  --venv, -v          Setup virtual environment"
+                echo "  --force, -f         Force reinstall/repair packages"
+                echo "  --dry-run, -d       Show what would be done, but don't execute"
+                echo "  --verbose           Enable verbose output"
+                echo "  --help, -h          Show this help message"
+                echo
+                echo "Examples:"
+                echo "  $0                  # Basic setup (Python packages only)"
+                echo "  $0 --system-deps    # Full setup with system dependencies"
+                echo "  $0 --venv           # Setup with virtual environment"
+                echo "  $0 --force          # Force reinstall/repair packages"
+                echo "  $0 --dry-run        # Show actions only"
+                exit 0
+                ;;
+            *)
+                warn "Unknown option: $1"
+                ;;
+        esac
+        shift
+    done
+    # Dry run mode
+    if [ $DRY_RUN -eq 1 ]; then
+        log "[DRY RUN] Would check Python version"
+        [ $INSTALL_SYSTEM_DEPS -eq 1 ] && log "[DRY RUN] Would install system dependencies and update ClamAV"
+        [ $USE_VENV -eq 1 ] && log "[DRY RUN] Would create and activate virtual environment"
+        log "[DRY RUN] Would install Python packages"
+        log "[DRY RUN] Would setup LinuxScan package"
+        log "[DRY RUN] Would setup wordlists"
+        log "[DRY RUN] Would create configuration files"
+        log "[DRY RUN] Would run system check"
+        log "[DRY RUN] Would display completion message"
+        exit 0
+    fi
+    # Install system dependencies if requested
+    if [ $INSTALL_SYSTEM_DEPS -eq 1 ]; then
         log "Installing system dependencies..."
         install_system_packages
         update_clamav
     fi
-    
     # Check Python version
     check_python_version
-    
-    # Setup virtual environment (optional)
-    if [ "$1" = "--venv" ] || [ "$1" = "-v" ]; then
+    # Setup virtual environment if requested
+    if [ $USE_VENV -eq 1 ]; then
         setup_virtual_environment
     fi
-    
     # Install Python packages
     install_python_packages
-    
     # Setup LinuxScan package
     setup_linuxscan
-    
     # Setup wordlists
     setup_wordlists
-    
     # Create configuration files
     create_configs
-    
     # Run system check
     run_system_check
-    
     # Display completion message
     display_completion
 }
 
-# Handle command line arguments
-case "$1" in
-    --help|-h)
-        echo "LinuxScan Setup Script"
-        echo "Usage: $0 [options]"
-        echo
-        echo "Options:"
-        echo "  --system-deps, -s    Install system dependencies"
-        echo "  --venv, -v          Setup virtual environment"
-        echo "  --help, -h          Show this help message"
-        echo
-        echo "Examples:"
-        echo "  $0                  # Basic setup (Python packages only)"
-        echo "  $0 --system-deps    # Full setup with system dependencies"
-        echo "  $0 --venv          # Setup with virtual environment"
-        exit 0
-        ;;
-    *)
-        main "$1"
-        ;;
-esac
+# Enhanced argument parsing and main entry
+main "$@"
