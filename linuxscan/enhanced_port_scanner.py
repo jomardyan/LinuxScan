@@ -24,7 +24,7 @@ import time
 import socket
 import ipaddress
 from typing import List, Dict, Any, Optional, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
+# Removed unused imports: ThreadPoolExecutor, as_completed
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
 from rich.live import Live
@@ -32,10 +32,10 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.layout import Layout
 from rich.text import Text
-from rich.align import Align
+# Removed unused import: Align
 from rich import box
 import threading
-import queue
+# Removed unused import: queue
 
 console = Console()
 

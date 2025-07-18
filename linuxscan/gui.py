@@ -41,10 +41,9 @@ from rich.table import Table
 from rich.text import Text
 from rich.live import Live
 from rich.layout import Layout
-from rich.progress import Progress, TaskID, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
+# Removed unused imports: TaskID, Columns, Align, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
 from rich.prompt import Prompt, Confirm, IntPrompt
-from rich.columns import Columns
-from rich.align import Align
+# Removed unused imports: Columns, Align
 
 try:
     from .enhanced_scanner import SecurityScanner, display_banner
@@ -85,6 +84,7 @@ class LinuxScanGUI:
         
     def handle_ctrl_c(self, signum, frame):
         """Handle Ctrl+C - Stop scan and return to main menu"""
+        # Note: signum and frame parameters are required by signal handler but not used
         if self.scan_in_progress:
             console.print("\n[bold red]🛑 Scan stopped by user (Ctrl+C)[/bold red]")
             self.scan_in_progress = False
@@ -98,6 +98,7 @@ class LinuxScanGUI:
             
     def handle_ctrl_z(self, signum, frame):
         """Handle Ctrl+Z - Pause/Resume scan"""
+        # Note: signum and frame parameters are required by signal handler but not used
         if self.scan_in_progress:
             if self.scan_paused:
                 console.print("\n[bold green]▶️  Scan resumed (Ctrl+Z)[/bold green]")

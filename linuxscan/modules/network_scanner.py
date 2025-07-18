@@ -37,11 +37,7 @@ except ImportError:
     SCAPY_AVAILABLE = False
     scapy = None
 
-try:
-    import netaddr
-    NETADDR_AVAILABLE = True
-except ImportError:
-    NETADDR_AVAILABLE = False
+# Removed unused import: netaddr
     netaddr = None
 
 
