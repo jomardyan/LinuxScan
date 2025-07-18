@@ -1,3 +1,18 @@
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author: Hayk Jomardyan
+#
 """
 System Check Module - Verify system dependencies and components
 """
@@ -306,13 +321,36 @@ class SystemCheckModule(BaseScannerModule):
                 result = subprocess.run([command, '--version'], 
                                       capture_output=True, 
                                       text=True, 
-                                      timeout=5)
+                                      timeout=10)  # Add timeout
                 if result.returncode == 0:
                     return True, f"{command} is installed and working"
                 else:
-                    return False, f"{command} is installed but not working properly"
-            except (subprocess.TimeoutExpired, FileNotFoundError):
-                return False, f"{command} is installed but not responding"
+                    # Try alternative version check
+                    result = subprocess.run([command, '-h'], 
+                                          capture_output=True, 
+                                          text=True, 
+                                          timeout=10)
+                    if result.returncode == 0:
+                        return True, f"{command} is installed and working"
+                    else:
+                        # Some tools like masscan return non-zero exit codes but still work
+                        # Check if the command exists and can be executed
+                        try:
+                            result = subprocess.run([command, '--help'], 
+                                                  capture_output=True, 
+                                                  text=True, 
+                                                  timeout=10)
+                            # If we get output, the command is working
+                            if result.stdout or result.stderr:
+                                return True, f"{command} is installed and working"
+                            else:
+                                return False, f"{command} is installed but not working properly"
+                        except:
+                            return False, f"{command} is installed but not working properly"
+            except subprocess.TimeoutExpired:
+                return False, f"{command} is installed but timed out during verification"
+            except FileNotFoundError:
+                return False, f"{command} is not installed"
         else:
             return False, f"{command} is not installed"
     
@@ -504,12 +542,16 @@ Affected Modules: {len(results['modules_affected'])}
                             # Handle sudo password prompt
                             console.print("🔐 [yellow]Administrator privileges required[/yellow]")
                         
-                        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                        # Add timeout to prevent hanging
+                        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120)
                         if result.returncode == 0:
                             console.print("✅ [green]Success[/green]")
                         else:
-                            console.print(f"❌ [red]Failed: {result.stderr}[/red]")
+                            console.print(f"❌ [red]Failed: {result.stderr.strip() if result.stderr else 'Command failed'}[/red]")
                             success = False
+                    except subprocess.TimeoutExpired:
+                        console.print("❌ [red]Installation timed out (120 seconds)[/red]")
+                        success = False
                     except Exception as e:
                         console.print(f"❌ [red]Error: {e}[/red]")
                         success = False
@@ -533,12 +575,16 @@ Affected Modules: {len(results['modules_affected'])}
                     cmd = f"pip3 install {' '.join(missing_packages)}"
                     console.print(f"🔧 Running: {cmd}")
                     try:
-                        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                        # Add timeout to prevent hanging
+                        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
                         if result.returncode == 0:
                             console.print("✅ [green]Python packages installed successfully[/green]")
                         else:
-                            console.print(f"❌ [red]Failed to install Python packages: {result.stderr}[/red]")
+                            console.print(f"❌ [red]Failed to install Python packages: {result.stderr.strip() if result.stderr else 'Command failed'}[/red]")
                             success = False
+                    except subprocess.TimeoutExpired:
+                        console.print("❌ [red]Python package installation timed out (300 seconds)[/red]")
+                        success = False
                     except Exception as e:
                         console.print(f"❌ [red]Error installing Python packages: {e}[/red]")
                         success = False

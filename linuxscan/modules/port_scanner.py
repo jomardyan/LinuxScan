@@ -1,3 +1,18 @@
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author: Hayk Jomardyan
+#
 """
 Enhanced port scanner with service enumeration and banner grabbing
 """
@@ -64,22 +79,33 @@ class PortScanner(BaseScannerModule):
         self.nm = nmap.PortScanner()
         
     async def scan(self, target: str, ports: Optional[List[int]] = None,
-                   scan_type: str = 'tcp', **kwargs) -> Dict[str, Any]:
+                   scan_type: str = 'tcp', enable_service_detection: bool = False,
+                   enable_os_detection: bool = False, enable_banner_grabbing: bool = False,
+                   **kwargs) -> Dict[str, Any]:
         """
-        Comprehensive port scan with service enumeration and banner grabbing
+        Comprehensive port scan with optional service enumeration and banner grabbing
         """
         self.log_scan_start(target)
         
-        if not self.validate_target(target):
-            return {"error": f"Target {target} is unreachable"}
+        # Enhanced target info with reverse DNS
+        target_info = self.enhance_target_info(target)
         
-        # Default port ranges
+        if not target_info['is_reachable']:
+            return {
+                "error": f"Target {target} is unreachable",
+                "target_info": target_info
+            }
+        
+        # Default port ranges - focus on common ports for faster scanning
         if ports is None:
-            ports = list(range(1, 1025))  # Standard well-known ports
-            ports.extend([1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 27017])
+            # Use common ports instead of scanning 1-1024 for better performance
+            ports = [21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 
+                    1433, 1521, 1723, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 
+                    27017, 11211, 50000]
         
         results = {
             'target': target,
+            'target_info': target_info,
             'scan_type': scan_type,
             'timestamp': datetime.now().isoformat(),
             'open_ports': {},
@@ -87,7 +113,12 @@ class PortScanner(BaseScannerModule):
             'filtered_ports': [],
             'os_detection': {},
             'service_detection': {},
-            'vulnerabilities': []
+            'vulnerabilities': [],
+            'scan_options': {
+                'service_detection': enable_service_detection,
+                'os_detection': enable_os_detection,
+                'banner_grabbing': enable_banner_grabbing
+            }
         }
         
         try:
@@ -101,20 +132,24 @@ class PortScanner(BaseScannerModule):
             
             results.update(scan_results)
             
-            # Enhanced service detection for open ports
-            for port in results['open_ports']:
-                service_info = await self._detect_service(target, port)
-                results['service_detection'][port] = service_info
-                
-                # Banner grabbing
-                banner = await self._grab_banner(target, port)
-                if banner:
-                    results['open_ports'][port]['banner'] = banner
-                    results['open_ports'][port]['service_version'] = self._parse_service_version(banner, port)
+            # Optional enhanced service detection for open ports
+            if enable_service_detection:
+                for port in results['open_ports']:
+                    service_info = await self._detect_service(target, port)
+                    results['service_detection'][port] = service_info
             
-            # OS detection using nmap
-            os_info = await self._detect_os(target)
-            results['os_detection'] = os_info
+            # Optional banner grabbing
+            if enable_banner_grabbing:
+                for port in results['open_ports']:
+                    banner = await self._grab_banner(target, port)
+                    if banner:
+                        results['open_ports'][port]['banner'] = banner
+                        results['open_ports'][port]['service_version'] = self._parse_service_version(banner, port)
+            
+            # Optional OS detection using nmap
+            if enable_os_detection:
+                os_info = await self._detect_os(target)
+                results['os_detection'] = os_info
             
             # Check for common vulnerabilities
             vulns = await self._check_vulnerabilities(target, results['open_ports'])
@@ -215,12 +250,25 @@ class PortScanner(BaseScannerModule):
             'version': None,
             'product': None,
             'cpe': None,
-            'scripts': {}
+            'scripts': {},
+            'error': None
         }
         
         try:
-            # Use nmap for detailed service detection
-            self.nm.scan(target, str(port), arguments='-sV -sC')
+            # Use asyncio to run nmap service detection with timeout
+            def run_nmap_service_scan():
+                try:
+                    self.nm.scan(target, str(port), arguments='-sV -sC')
+                    return True
+                except Exception as e:
+                    raise e
+            
+            # Run with timeout to prevent hanging
+            loop = asyncio.get_event_loop()
+            await asyncio.wait_for(
+                loop.run_in_executor(None, run_nmap_service_scan),
+                timeout=15  # 15 second timeout for service detection
+            )
             
             if target in self.nm.all_hosts() and 'tcp' in self.nm[target]:
                 if port in self.nm[target]['tcp']:
@@ -232,8 +280,12 @@ class PortScanner(BaseScannerModule):
                         'cpe': port_info.get('cpe', None),
                         'scripts': port_info.get('script', {})
                     })
+        except asyncio.TimeoutError:
+            self.logger.warning(f"Service detection timed out for {target}:{port}")
+            service_info['error'] = "Service detection timed out"
         except Exception as e:
             self.logger.error(f"Service detection failed for {target}:{port}: {str(e)}")
+            service_info['error'] = str(e)
         
         return service_info
     
@@ -255,7 +307,7 @@ class PortScanner(BaseScannerModule):
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(target, port),
-                timeout=self.timeout
+                timeout=min(self.timeout, 5)  # Use shorter timeout for banner grabbing
             )
             
             # Send appropriate probe based on port
@@ -264,7 +316,7 @@ class PortScanner(BaseScannerModule):
                 writer.write(probe)
                 await writer.drain()
             
-            # Read response
+            # Read response with shorter timeout
             banner = await asyncio.wait_for(reader.read(1024), timeout=3)
             
             writer.close()
@@ -272,7 +324,11 @@ class PortScanner(BaseScannerModule):
             
             return banner.decode('utf-8', errors='ignore').strip()
             
-        except Exception:
+        except asyncio.TimeoutError:
+            self.logger.debug(f"Banner grabbing timed out for {target}:{port}")
+            return None
+        except Exception as e:
+            self.logger.debug(f"Banner grabbing failed for {target}:{port}: {str(e)}")
             return None
     
     async def _grab_ssl_banner(self, target: str, port: int) -> Optional[str]:
@@ -335,16 +391,32 @@ class PortScanner(BaseScannerModule):
         return banner.split('\\n')[0][:100]
     
     async def _detect_os(self, target: str) -> Dict[str, Any]:
-        """OS detection using nmap"""
+        """OS detection using nmap (requires root privileges)"""
         os_info = {
             'os_match': None,
             'accuracy': 0,
             'os_classes': [],
-            'fingerprint': None
+            'fingerprint': None,
+            'error': None
         }
         
         try:
-            self.nm.scan(target, arguments='-O')
+            # Use asyncio to run nmap with timeout to prevent hanging
+            def run_nmap_os_scan():
+                try:
+                    self.nm.scan(target, arguments='-O')
+                    return True
+                except Exception as e:
+                    if "requires root privileges" in str(e).lower():
+                        raise PermissionError("OS detection requires root privileges")
+                    raise e
+            
+            # Run with timeout to prevent hanging
+            loop = asyncio.get_event_loop()
+            await asyncio.wait_for(
+                loop.run_in_executor(None, run_nmap_os_scan),
+                timeout=10  # 10 second timeout for OS detection
+            )
             
             if target in self.nm.all_hosts():
                 host_info = self.nm[target]
@@ -360,8 +432,15 @@ class PortScanner(BaseScannerModule):
                                          for osclass in best_match.get('osclass', [])],
                             'fingerprint': host_info.get('fingerprint', None)
                         })
+        except PermissionError as e:
+            self.logger.warning(f"OS detection requires root privileges, skipping: {str(e)}")
+            os_info['error'] = "OS detection requires root privileges"
+        except asyncio.TimeoutError:
+            self.logger.warning(f"OS detection timed out for {target}")
+            os_info['error'] = "OS detection timed out"
         except Exception as e:
             self.logger.error(f"OS detection failed: {str(e)}")
+            os_info['error'] = str(e)
         
         return os_info
     

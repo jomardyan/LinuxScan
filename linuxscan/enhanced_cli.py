@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author: Hayk Jomardyan
+#
 """
 LinuxScan CLI - Command Line Interface
 Professional Linux Security Scanner CLI
@@ -43,6 +58,11 @@ SCAN_MODULES = {
     'database_scanner': 'Database security assessment',
     'forensics_scanner': 'Digital forensics and analysis',
     'ssh_scanner': 'SSH security testing and red team assessment',
+    'crypto_scanner': 'Cryptographic security assessment',
+    'memory_scanner': 'Memory forensics and analysis',
+    'steganography_scanner': 'Steganography detection and analysis',
+    'iot_scanner': 'IoT device discovery and security assessment',
+    'traffic_scanner': 'Network traffic analysis and monitoring',
     'system_check': 'System dependency and component verification'
 }
 
@@ -257,6 +277,14 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
               help='Enable SSH configuration audit (requires credentials)')
 @click.option('--ssh-credentials', type=str,
               help='SSH credentials in format "username:password" for config audit')
+@click.option('--enable-service-detection', is_flag=True,
+              help='Enable detailed service detection (slower but more thorough)')
+@click.option('--enable-os-detection', is_flag=True,
+              help='Enable OS detection (requires root privileges)')
+@click.option('--enable-banner-grabbing', is_flag=True,
+              help='Enable banner grabbing for open ports')
+@click.option('--advanced-scan', is_flag=True,
+              help='Enable all advanced features (service detection, OS detection, banner grabbing)')
 def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
          output: Optional[str], output_format: str, config: Optional[str],
          compliance: Optional[str], verbose: bool, quiet: bool, details: bool,
@@ -264,7 +292,8 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
          system_check: bool, auto_install: bool,
          ssh_brute_force: bool, ssh_usernames: Optional[str], ssh_passwords: Optional[str],
          ssh_max_attempts: int, ssh_delay: float, ssh_config_audit: bool,
-         ssh_credentials: Optional[str]):
+         ssh_credentials: Optional[str], enable_service_detection: bool,
+         enable_os_detection: bool, enable_banner_grabbing: bool, advanced_scan: bool):
     """
     LinuxScan - Comprehensive Linux Security Scanner
     
@@ -329,9 +358,22 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
     if not quiet:
         display_banner()
     
+    # Handle interactive mode without targets
+    if interactive and not targets and not system_check and not version and not list_modules and not help_extended:
+        console.print("[cyan]🚀 Launching LinuxScan Interactive Interface...[/cyan]")
+        try:
+            from .gui import LinuxScanGUI
+            gui = LinuxScanGUI()
+            gui.run()
+            return
+        except ImportError as e:
+            console.print(f"[red]Error loading GUI: {e}[/red]")
+            console.print("[yellow]GUI mode requires all dependencies to be installed[/yellow]")
+            sys.exit(1)
+    
     # Check if targets are required
-    if not targets and not system_check and not version and not list_modules and not help_extended:
-        console.print("[red]Error: TARGETS argument is required unless using --system-check, --version, --list-modules, or --help-extended[/red]")
+    if not targets and not system_check and not version and not list_modules and not help_extended and not interactive:
+        console.print("[red]Error: TARGETS argument is required unless using --interactive, --system-check, --version, --list-modules, or --help-extended[/red]")
         sys.exit(1)
 
     try:
@@ -392,6 +434,19 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
             console.print(f"[green]Starting scan of {len(target_list)} targets[/green]")
             console.print(f"[blue]Using modules: {', '.join(module_list)}[/blue]")
         
+        # Enable advanced features if requested
+        if advanced_scan:
+            enable_service_detection = True
+            enable_os_detection = True
+            enable_banner_grabbing = True
+        
+        # Build scan options
+        scan_options = {
+            'enable_service_detection': enable_service_detection,
+            'enable_os_detection': enable_os_detection,
+            'enable_banner_grabbing': enable_banner_grabbing
+        }
+        
         # Build SSH scanning options
         ssh_kwargs = {}
         if ssh_brute_force:
@@ -409,6 +464,9 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
             if ssh_credentials:
                 username, password = ssh_credentials.split(':', 1)
                 ssh_kwargs['credentials'] = {'username': username, 'password': password}
+        
+        # Add scan options to kwargs
+        ssh_kwargs.update(scan_options)
         
         # Run scan
         results = asyncio.run(scanner.scan_network(target_list, module_list, **ssh_kwargs))
