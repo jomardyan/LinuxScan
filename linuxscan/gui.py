@@ -306,7 +306,19 @@ class LinuxScanGUI:
         console.print(system_panel)
         console.print()
         
-        # Display keyboard shortcuts info
+        # Display disclaimer and keyboard shortcuts
+        disclaimer_panel = Panel.fit(
+            """[bold red]⚠️  LEGAL DISCLAIMER[/bold red]
+[yellow]FOR EDUCATIONAL & AUTHORIZED TESTING ONLY[/yellow]
+Use only on systems you own or have explicit written permission to test.
+Unauthorized scanning is illegal and prohibited. Users accept full responsibility.""",
+            title="Important Notice",
+            border_style="red",
+            padding=(0, 1)
+        )
+        console.print(disclaimer_panel)
+        console.print()
+        
         shortcuts_info = """[bold cyan]Keyboard Shortcuts:[/bold cyan] [yellow]Ctrl+C[/yellow] = Stop scan | [yellow]Ctrl+Z[/yellow] = Pause/Resume scan"""
         console.print(shortcuts_info)
         console.print()

@@ -2,6 +2,27 @@
 
 A comprehensive, professional security scanning tool for Linux systems with advanced capabilities including IoT device discovery, cryptographic analysis, memory forensics, and steganography detection.
 
+## ⚠️ IMPORTANT DISCLAIMER
+
+**FOR EDUCATIONAL AND AUTHORIZED TESTING PURPOSES ONLY**
+
+This tool is designed exclusively for:
+- **Educational purposes** and cybersecurity learning
+- **Authorized security testing** within your own organization
+- **Legal penetration testing** with proper written authorization
+- **Network security auditing** of systems you own or have explicit permission to test
+
+**PROHIBITED USES:**
+- Unauthorized scanning of networks, systems, or devices you do not own
+- Testing systems without explicit written permission from the owner
+- Any malicious or illegal activities
+- Violation of local, state, or federal laws
+
+**LEGAL RESPONSIBILITY:**
+Users are solely responsible for ensuring compliance with all applicable laws and regulations. The author and contributors assume no liability for misuse of this tool. Always obtain proper authorization before conducting any security testing.
+
+**USE AT YOUR OWN RISK:** This tool is provided "as-is" without warranty. Users accept full responsibility for any consequences of using this software.
+
 ## 🚀 Features
 
 ### 🔍 **Core Scanning Capabilities**

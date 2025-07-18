@@ -213,3 +213,22 @@ test_results.*
 results/
 output/
 reports/
+
+# Temporary files and artifacts
+*.tmp
+*.temp
+*.log
+*.bak
+*~
+*.swp
+*.swo
+*.orig
+.DS_Store
+Thumbs.db
+
+# Development artifacts
+ENHANCEMENT_SUMMARY.md
+SSH_SCANNER_DOCS.md
+test_fixes.sh
+demo_*.py
+temp_*
