@@ -8,9 +8,14 @@ A high-performance, professional security scanning tool for remote Linux servers
 - **Comprehensive Security Assessment**:
   - Port scanning with service detection
   - SSL certificate validation
-  - SSH configuration analysis
-  - Vulnerability detection
+  - SSH security testing and red team assessment
+  - Vulnerability detection with CVE mapping
   - OS fingerprinting
+  - Web application security testing
+  - Database security assessment
+  - Network traffic analysis
+  - Malware detection and analysis
+  - Digital forensics capabilities
 - **Professional Console UI**: Rich, interactive console interface with real-time progress
 - **Command-Line Interface**: Full CLI support with non-interactive mode
 - **Python API**: Programmatic access for integration
@@ -61,6 +66,18 @@ linuxscan 192.168.1.1 -o results.json --format json
 
 # Use configuration file
 linuxscan -c config.json 192.168.1.1
+
+# SSH Security Assessment
+linuxscan 192.168.1.1 --modules ssh_scanner
+
+# SSH Brute Force Testing (Red Team)
+linuxscan 192.168.1.1 --modules ssh_scanner --ssh-brute-force
+
+# Custom SSH credentials testing
+linuxscan 192.168.1.1 --ssh-brute-force --ssh-usernames admin,root --ssh-passwords password,123456
+
+# SSH Configuration Audit
+linuxscan 192.168.1.1 --ssh-config-audit --ssh-credentials admin:password
 
 # Interactive mode (original behavior)
 linuxscan --interactive
@@ -126,10 +143,14 @@ The scanner performs the following security assessments:
    - Certificate expiration
    - Certificate details
    - Weak configurations
-3. **SSH Security**:
-   - Protocol version checks
-   - Authentication methods
-   - Weak algorithm detection
+3. **SSH Security & Red Team Assessment**:
+   - SSH service detection and banner grabbing
+   - SSH protocol analysis and algorithm enumeration
+   - Vulnerability scanning with CVE mapping
+   - Brute force testing with common credentials
+   - Configuration auditing and compliance checking
+   - SSH key enumeration and analysis
+   - Red team assessment capabilities
 4. **Vulnerability Detection**:
    - Known CVEs
    - Service-specific vulnerabilities

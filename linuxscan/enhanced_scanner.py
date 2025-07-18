@@ -48,6 +48,7 @@ try:
     from .modules.config_scanner import ConfigScanner
     from .modules.malware_scanner import MalwareScanner
     from .modules.database_scanner import DatabaseScanner
+    from .modules.ssh_scanner import SSHScanner
     from .modules.base_scanner import scanner_registry
 except ImportError:
     # Fallback for direct execution
@@ -61,6 +62,7 @@ except ImportError:
     from modules.config_scanner import ConfigScanner
     from modules.malware_scanner import MalwareScanner
     from modules.database_scanner import DatabaseScanner
+    from modules.ssh_scanner import SSHScanner
     from modules.base_scanner import scanner_registry
 
 # Console instance for rich output
@@ -116,6 +118,7 @@ class SecurityScanner:
         self.config_scanner = ConfigScanner(timeout=timeout)
         self.malware_scanner = MalwareScanner(timeout=timeout)
         self.database_scanner = DatabaseScanner(timeout=timeout)
+        self.ssh_scanner = SSHScanner(timeout=timeout)
         
         # Register scanners
         scanner_registry.register('port_scanner', PortScanner)
@@ -126,6 +129,7 @@ class SecurityScanner:
         scanner_registry.register('config_scanner', ConfigScanner)
         scanner_registry.register('malware_scanner', MalwareScanner)
         scanner_registry.register('database_scanner', DatabaseScanner)
+        scanner_registry.register('ssh_scanner', SSHScanner)
         
     def parse_targets(self, targets: List[str]) -> List[str]:
         """Parse and validate target list"""
@@ -247,10 +251,10 @@ class SecurityScanner:
         except Exception as e:
             return None
     
-    async def scan_host(self, host: str, scan_modules: List[str] = None) -> Dict[str, Any]:
+    async def scan_host(self, host: str, scan_modules: List[str] = None, **kwargs) -> Dict[str, Any]:
         """Comprehensive scan of a single host"""
         if scan_modules is None:
-            scan_modules = ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner']
+            scan_modules = ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner', 'ssh_scanner']
         
         host_results = {
             'host': host,
@@ -271,6 +275,11 @@ class SecurityScanner:
                 # Use port scan results for other scanners
                 open_ports = port_results.get('open_ports', {})
                 service_detection = port_results.get('service_detection', {})
+                
+                # SSH scanning for SSH services
+                if 'ssh_scanner' in scan_modules and 22 in open_ports:
+                    ssh_results = await self.ssh_scanner.scan(host, **kwargs)
+                    host_results['scan_results']['ssh_scan'] = ssh_results
                 
                 # Vulnerability scanning
                 if 'vulnerability_scanner' in scan_modules:
@@ -296,6 +305,11 @@ class SecurityScanner:
                         if port in open_ports:
                             db_results = await self.database_scanner.scan(host, port=port)
                             host_results['scan_results'][f'database_scan_{port}'] = db_results
+            
+            # SSH scanning (standalone if SSH port scanning is not enabled)
+            if 'ssh_scanner' in scan_modules and 'port_scanner' not in scan_modules:
+                ssh_results = await self.ssh_scanner.scan(host, **kwargs)
+                host_results['scan_results']['ssh_scan'] = ssh_results
             
             # Network scanning
             if 'network_scanner' in scan_modules:
@@ -331,7 +345,7 @@ class SecurityScanner:
         
         return host_results
     
-    async def scan_network(self, targets: List[str], scan_modules: List[str] = None) -> Dict[str, Any]:
+    async def scan_network(self, targets: List[str], scan_modules: List[str] = None, **kwargs) -> Dict[str, Any]:
         """Scan multiple targets"""
         self.scan_start_time = datetime.now()
         
@@ -359,7 +373,7 @@ class SecurityScanner:
             
             async def scan_with_progress(host):
                 async with semaphore:
-                    result = await self.scan_host(host, scan_modules)
+                    result = await self.scan_host(host, scan_modules, **kwargs)
                     progress.advance(scan_task)
                     self.scanned_hosts += 1
                     

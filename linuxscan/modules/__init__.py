@@ -10,6 +10,7 @@ from .forensics_scanner import ForensicsScanner
 from .config_scanner import ConfigScanner
 from .malware_scanner import MalwareScanner
 from .database_scanner import DatabaseScanner
+from .ssh_scanner import SSHScanner
 
 __all__ = [
     'PortScanner',
@@ -19,5 +20,6 @@ __all__ = [
     'ForensicsScanner',
     'ConfigScanner',
     'MalwareScanner',
-    'DatabaseScanner'
+    'DatabaseScanner',
+    'SSHScanner'
 ]

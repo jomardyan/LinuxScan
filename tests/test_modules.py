@@ -16,6 +16,7 @@ from linuxscan.modules.forensics_scanner import ForensicsScanner
 from linuxscan.modules.config_scanner import ConfigScanner
 from linuxscan.modules.malware_scanner import MalwareScanner
 from linuxscan.modules.database_scanner import DatabaseScanner
+from linuxscan.modules.ssh_scanner import SSHScanner
 from linuxscan.modules.base_scanner import BaseScannerModule, scanner_registry
 
 
@@ -571,7 +572,9 @@ class TestScannerRegistry:
         
         # Test if default scanners are registered
         assert 'port_scanner' in registry.list_scanners()
+        assert 'ssh_scanner' in registry.list_scanners()
         assert registry.get_scanner('port_scanner') is not None
+        assert registry.get_scanner('ssh_scanner') is not None
     
     def test_create_scanner(self):
         """Test scanner creation"""
@@ -580,6 +583,10 @@ class TestScannerRegistry:
         scanner = registry.create_scanner('port_scanner')
         assert scanner is not None
         assert isinstance(scanner, PortScanner)
+        
+        ssh_scanner = registry.create_scanner('ssh_scanner')
+        assert ssh_scanner is not None
+        assert isinstance(ssh_scanner, SSHScanner)
     
     def test_list_scanners(self):
         """Test scanner listing"""

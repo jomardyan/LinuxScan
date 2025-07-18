@@ -41,7 +41,8 @@ SCAN_MODULES = {
     'config_scanner': 'Configuration and compliance auditing',
     'malware_scanner': 'Malware detection and analysis',
     'database_scanner': 'Database security assessment',
-    'forensics_scanner': 'Digital forensics and analysis'
+    'forensics_scanner': 'Digital forensics and analysis',
+    'ssh_scanner': 'SSH security testing and red team assessment'
 }
 
 # Output formats
@@ -237,10 +238,27 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
               help='List available scan modules')
 @click.option('--help-extended', is_flag=True,
               help='Show extended help with examples')
+@click.option('--ssh-brute-force', is_flag=True,
+              help='Enable SSH brute force testing (red team mode)')
+@click.option('--ssh-usernames', type=str, 
+              help='Comma-separated list of SSH usernames to test')
+@click.option('--ssh-passwords', type=str,
+              help='Comma-separated list of SSH passwords to test')
+@click.option('--ssh-max-attempts', type=int, default=100,
+              help='Maximum SSH brute force attempts (default: 100)')
+@click.option('--ssh-delay', type=float, default=1.0,
+              help='Delay between SSH attempts in seconds (default: 1.0)')
+@click.option('--ssh-config-audit', is_flag=True,
+              help='Enable SSH configuration audit (requires credentials)')
+@click.option('--ssh-credentials', type=str,
+              help='SSH credentials in format "username:password" for config audit')
 def main(targets: str, modules: str, timeout: int, max_workers: int,
          output: Optional[str], output_format: str, config: Optional[str],
          compliance: Optional[str], verbose: bool, quiet: bool, details: bool,
-         interactive: bool, version: bool, list_modules: bool, help_extended: bool):
+         interactive: bool, version: bool, list_modules: bool, help_extended: bool,
+         ssh_brute_force: bool, ssh_usernames: Optional[str], ssh_passwords: Optional[str],
+         ssh_max_attempts: int, ssh_delay: float, ssh_config_audit: bool,
+         ssh_credentials: Optional[str]):
     """
     LinuxScan - Comprehensive Linux Security Scanner
     
@@ -320,8 +338,26 @@ def main(targets: str, modules: str, timeout: int, max_workers: int,
             console.print(f"[green]Starting scan of {len(target_list)} targets[/green]")
             console.print(f"[blue]Using modules: {', '.join(module_list)}[/blue]")
         
+        # Build SSH scanning options
+        ssh_kwargs = {}
+        if ssh_brute_force:
+            ssh_kwargs['brute_force'] = True
+            ssh_kwargs['max_attempts'] = ssh_max_attempts
+            ssh_kwargs['delay'] = ssh_delay
+            
+            if ssh_usernames:
+                ssh_kwargs['usernames'] = ssh_usernames.split(',')
+            if ssh_passwords:
+                ssh_kwargs['passwords'] = ssh_passwords.split(',')
+        
+        if ssh_config_audit:
+            ssh_kwargs['config_audit'] = True
+            if ssh_credentials:
+                username, password = ssh_credentials.split(':', 1)
+                ssh_kwargs['credentials'] = {'username': username, 'password': password}
+        
         # Run scan
-        results = asyncio.run(scanner.scan_network(target_list, module_list))
+        results = asyncio.run(scanner.scan_network(target_list, module_list, **ssh_kwargs))
         
         # Display results
         if not quiet:
