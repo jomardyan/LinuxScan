@@ -64,8 +64,8 @@ dev = [
 "Source Code" = "https://github.com/jomardyan/LinuxScan"
 
 [project.scripts]
-linuxscan = "linuxscan.cli:cli_main"
-linux-security-scanner = "linuxscan.cli:cli_main"
+linuxscan = "linuxscan.enhanced_cli:cli_main"
+linux-security-scanner = "linuxscan.enhanced_cli:cli_main"
 
 [tool.setuptools]
 packages = ["linuxscan"]

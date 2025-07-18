@@ -9,7 +9,7 @@ import json
 from unittest.mock import patch, AsyncMock, MagicMock, mock_open
 from datetime import datetime
 
-from linuxscan.scanner import SecurityScanner
+from linuxscan.enhanced_scanner import SecurityScanner
 
 
 class TestSecurityScanner:
@@ -331,7 +331,7 @@ class TestUtilityFunctions:
     
     def test_display_banner(self):
         """Test banner display"""
-        from linuxscan.scanner import display_banner
+        from linuxscan.enhanced_scanner import display_banner
         
         with patch('linuxscan.scanner.console') as mock_console:
             display_banner()
@@ -339,7 +339,7 @@ class TestUtilityFunctions:
     
     def test_display_help(self):
         """Test help display"""
-        from linuxscan.scanner import display_help
+        from linuxscan.enhanced_scanner import display_help
         
         with patch('linuxscan.scanner.console') as mock_console:
             display_help()
