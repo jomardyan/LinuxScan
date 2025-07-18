@@ -7,15 +7,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
-from linuxscan.modules.memory_scanner import MemoryScanner
+from linuxscan.modules.memory_scanner import MemoryAnalysisScanner
 
 
-class TestMemoryScanner:
-    """Test MemoryScanner module"""
+class TestMemoryAnalysisScanner:
+    """Test MemoryAnalysisScanner module"""
     
     def test_init(self):
-        """Test MemoryScanner initialization"""
-        scanner = MemoryScanner()
+        """Test MemoryAnalysisScanner initialization"""
+        scanner = MemoryAnalysisScanner()
         assert scanner.name == "memory_scanner"
         assert scanner.timeout == 180
         assert len(scanner.memory_artifacts) > 0
@@ -25,7 +25,7 @@ class TestMemoryScanner:
     @pytest.mark.asyncio
     async def test_scan_basic(self):
         """Test basic memory scanning"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         with patch.object(scanner, '_memory_acquisition') as mock_acquisition:
             mock_acquisition.return_value = {
@@ -60,7 +60,7 @@ class TestMemoryScanner:
     @pytest.mark.asyncio
     async def test_memory_acquisition(self):
         """Test memory acquisition"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         with patch('subprocess.run') as mock_subprocess:
             mock_subprocess.return_value.returncode = 0
@@ -81,7 +81,7 @@ class TestMemoryScanner:
     @pytest.mark.asyncio
     async def test_volatility_analysis(self):
         """Test Volatility framework analysis"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         with patch('subprocess.run') as mock_subprocess:
             # Mock pslist output
@@ -101,7 +101,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_analyze_process_list(self):
         """Test process list analysis"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         processes = [
             {'pid': 1234, 'name': 'suspicious.exe', 'command': 'malware.exe'},
@@ -116,7 +116,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_detect_process_injection(self):
         """Test process injection detection"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         processes = [
             {
@@ -136,7 +136,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_analyze_network_connections(self):
         """Test network connection analysis"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         connections = [
             {'pid': 1234, 'local_addr': '192.168.1.100:1234', 'remote_addr': '192.168.1.1:80', 'state': 'ESTABLISHED'},
@@ -150,7 +150,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_detect_rootkit_indicators(self):
         """Test rootkit indicator detection"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         # Test with rootkit signatures
         memory_content = b'some_rootkit_signature_here'
@@ -162,7 +162,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_analyze_syscall_table(self):
         """Test syscall table analysis"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         syscall_table = [
             {'number': 1, 'name': 'sys_exit', 'address': 0x80123456, 'original': True},
@@ -176,7 +176,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_extract_memory_artifacts(self):
         """Test memory artifact extraction"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         memory_dump = b'''
         Some memory content with passwords:
@@ -197,7 +197,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_analyze_heap_spray(self):
         """Test heap spray detection"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         # Mock heap data with spray pattern
         heap_data = b'\x90' * 1000 + b'\x41' * 1000  # NOP sled + shellcode pattern
@@ -210,7 +210,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_detect_code_injection(self):
         """Test code injection detection"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         processes = [
             {
@@ -235,7 +235,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_analyze_driver_integrity(self):
         """Test driver integrity analysis"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         drivers = [
             {
@@ -261,7 +261,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_generate_memory_report(self):
         """Test memory analysis report generation"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         results = {
             'memory_acquisition': {
@@ -293,7 +293,7 @@ PID     PPID    ImageFileName   Offset(V)   Threads Hndls   SessionId
     
     def test_calculate_memory_risk_score(self):
         """Test memory analysis risk score calculation"""
-        scanner = MemoryScanner()
+        scanner = MemoryAnalysisScanner()
         
         # Test high risk scenario
         high_risk_results = {

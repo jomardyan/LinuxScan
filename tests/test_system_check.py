@@ -7,15 +7,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
-from linuxscan.modules.system_check import SystemCheck
+from linuxscan.modules.system_check import SystemCheckModule
 
 
-class TestSystemCheck:
-    """Test SystemCheck module"""
+class TestSystemCheckModule:
+    """Test SystemCheckModule module"""
     
     def test_init(self):
-        """Test SystemCheck initialization"""
-        scanner = SystemCheck()
+        """Test SystemCheckModule initialization"""
+        scanner = SystemCheckModule()
         assert scanner.name == "system_check"
         assert scanner.timeout == 60
         assert len(scanner.critical_services) > 0
@@ -25,7 +25,7 @@ class TestSystemCheck:
     @pytest.mark.asyncio
     async def test_scan_basic(self):
         """Test basic system check scanning"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch.object(scanner, '_system_info_check') as mock_info:
             mock_info.return_value = {
@@ -59,7 +59,7 @@ class TestSystemCheck:
     @pytest.mark.asyncio
     async def test_system_info_check(self):
         """Test system information check"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('subprocess.run') as mock_subprocess:
             # Mock hostname command
@@ -80,7 +80,7 @@ class TestSystemCheck:
     @pytest.mark.asyncio
     async def test_service_status_check(self):
         """Test service status check"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('subprocess.run') as mock_subprocess:
             # Mock systemctl status output
@@ -106,7 +106,7 @@ mysql.service - MySQL Community Server
     @pytest.mark.asyncio
     async def test_security_config_check(self):
         """Test security configuration check"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('subprocess.run') as mock_subprocess:
             # Mock various security command outputs
@@ -126,7 +126,7 @@ mysql.service - MySQL Community Server
     
     def test_analyze_system_vulnerabilities(self):
         """Test system vulnerability analysis"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         system_info = {
             'os': 'Ubuntu 18.04',
@@ -141,7 +141,7 @@ mysql.service - MySQL Community Server
     
     def test_check_file_integrity(self):
         """Test file integrity check"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('os.path.exists') as mock_exists:
             mock_exists.return_value = True
@@ -159,7 +159,7 @@ mysql.service - MySQL Community Server
     
     def test_analyze_user_accounts(self):
         """Test user account analysis"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         shadow_content = '''
 root:!:18900:0:99999:7:::
@@ -190,7 +190,7 @@ user2:x:1001:1001:User Two:/home/user2:/bin/bash
     
     def test_check_network_configuration(self):
         """Test network configuration check"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('subprocess.run') as mock_subprocess:
             # Mock network interface output
@@ -211,7 +211,7 @@ user2:x:1001:1001:User Two:/home/user2:/bin/bash
     
     def test_analyze_running_processes(self):
         """Test running process analysis"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         with patch('subprocess.run') as mock_subprocess:
             mock_subprocess.return_value.returncode = 0
@@ -232,7 +232,7 @@ user2:x:1001:1001:User Two:/home/user2:/bin/bash
     
     def test_check_system_logs(self):
         """Test system log analysis"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         log_content = '''
 Jan 1 10:00:00 server sshd[1234]: Accepted password for user from 192.168.1.50 port 22
@@ -254,7 +254,7 @@ Jan 1 10:03:00 server kernel: Out of memory: Kill process 1237 (apache2) score 1
     
     def test_generate_system_recommendations(self):
         """Test system recommendation generation"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         results = {
             'system_info': {
@@ -288,7 +288,7 @@ Jan 1 10:03:00 server kernel: Out of memory: Kill process 1237 (apache2) score 1
     
     def test_calculate_system_health_score(self):
         """Test system health score calculation"""
-        scanner = SystemCheck()
+        scanner = SystemCheckModule()
         
         # Test healthy system
         healthy_results = {

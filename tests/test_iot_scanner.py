@@ -7,15 +7,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
-from linuxscan.modules.iot_scanner import IoTScanner
+from linuxscan.modules.iot_scanner import IoTDeviceScanner
 
 
-class TestIoTScanner:
-    """Test IoTScanner module"""
+class TestIoTDeviceScanner:
+    """Test IoTDeviceScanner module"""
     
     def test_init(self):
-        """Test IoTScanner initialization"""
-        scanner = IoTScanner()
+        """Test IoTDeviceScanner initialization"""
+        scanner = IoTDeviceScanner()
         assert scanner.name == "iot_scanner"
         assert scanner.timeout == 60
         assert len(scanner.iot_ports) > 0
@@ -30,7 +30,7 @@ class TestIoTScanner:
     @pytest.mark.asyncio
     async def test_scan_basic(self):
         """Test basic IoT scanning"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         with patch.object(scanner, '_device_discovery') as mock_discovery:
             mock_discovery.return_value = {
@@ -65,7 +65,7 @@ class TestIoTScanner:
     @pytest.mark.asyncio
     async def test_device_discovery(self):
         """Test IoT device discovery"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         with patch.object(scanner, '_scan_iot_ports') as mock_ports:
             mock_ports.return_value = {
@@ -95,7 +95,7 @@ class TestIoTScanner:
     
     def test_fingerprint_device(self):
         """Test device fingerprinting"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         # Test IP camera fingerprinting
         services = {
@@ -112,7 +112,7 @@ class TestIoTScanner:
     @pytest.mark.asyncio
     async def test_mqtt_analysis(self):
         """Test MQTT protocol analysis"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         with patch('paho.mqtt.client.Client') as mock_client:
             mock_mqtt = MagicMock()
@@ -131,7 +131,7 @@ class TestIoTScanner:
     @pytest.mark.asyncio
     async def test_coap_analysis(self):
         """Test CoAP protocol analysis"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         with patch('aiocoap.Context') as mock_context:
             mock_ctx = AsyncMock()
@@ -149,7 +149,7 @@ class TestIoTScanner:
     
     def test_analyze_iot_vulnerabilities(self):
         """Test IoT vulnerability analysis"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         device_info = {
             'device_type': 'IP Camera',
@@ -179,7 +179,7 @@ class TestIoTScanner:
     
     def test_check_firmware_vulnerabilities(self):
         """Test firmware vulnerability checking"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         # Test known vulnerable firmware
         device_info = {
@@ -195,7 +195,7 @@ class TestIoTScanner:
     
     def test_detect_iot_protocols(self):
         """Test IoT protocol detection"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         services = {
             1883: {'service': 'MQTT', 'banner': 'MQTT broker'},
@@ -211,7 +211,7 @@ class TestIoTScanner:
     
     def test_generate_iot_recommendations(self):
         """Test IoT security recommendations"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         results = {
             'device_discovery': {
@@ -242,7 +242,7 @@ class TestIoTScanner:
     
     def test_calculate_iot_risk_score(self):
         """Test IoT risk score calculation"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         # Test high risk scenario
         high_risk_results = {
@@ -285,7 +285,7 @@ class TestIoTScanner:
     @pytest.mark.asyncio
     async def test_scan_iot_ports(self):
         """Test IoT port scanning"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         with patch('asyncio.open_connection') as mock_connect:
             mock_reader = AsyncMock()
@@ -301,7 +301,7 @@ class TestIoTScanner:
     
     def test_extract_device_info(self):
         """Test device information extraction"""
-        scanner = IoTScanner()
+        scanner = IoTDeviceScanner()
         
         # Test HTTP banner extraction
         http_banner = 'HTTP/1.1 200 OK\r\nServer: lighttpd/1.4.35\r\nContent-Type: text/html\r\n\r\n<html><title>IP Camera</title></html>'

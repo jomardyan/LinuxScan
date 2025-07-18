@@ -7,15 +7,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
-from linuxscan.modules.traffic_scanner import TrafficScanner
+from linuxscan.modules.traffic_scanner import TrafficAnalysisScanner
 
 
-class TestTrafficScanner:
-    """Test TrafficScanner module"""
+class TestTrafficAnalysisScanner:
+    """Test TrafficAnalysisScanner module"""
     
     def test_init(self):
-        """Test TrafficScanner initialization"""
-        scanner = TrafficScanner()
+        """Test TrafficAnalysisScanner initialization"""
+        scanner = TrafficAnalysisScanner()
         assert scanner.name == "traffic_scanner"
         assert scanner.timeout == 300
         assert scanner.capture_duration == 60
@@ -30,7 +30,7 @@ class TestTrafficScanner:
     @pytest.mark.asyncio
     async def test_scan_basic(self):
         """Test basic traffic scanning"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         with patch.object(scanner, '_packet_capture') as mock_capture:
             mock_capture.return_value = {
@@ -64,7 +64,7 @@ class TestTrafficScanner:
     @pytest.mark.asyncio
     async def test_packet_capture(self):
         """Test packet capture functionality"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         with patch('scapy.all.sniff') as mock_sniff:
             # Mock captured packets
@@ -84,7 +84,7 @@ class TestTrafficScanner:
     
     def test_analyze_http_traffic(self):
         """Test HTTP traffic analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock HTTP packets
         http_packets = [
@@ -112,7 +112,7 @@ class TestTrafficScanner:
     
     def test_analyze_dns_traffic(self):
         """Test DNS traffic analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock DNS packets
         dns_packets = [
@@ -140,7 +140,7 @@ class TestTrafficScanner:
     
     def test_detect_suspicious_patterns(self):
         """Test suspicious pattern detection"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock packets with suspicious patterns
         suspicious_packets = [
@@ -171,7 +171,7 @@ class TestTrafficScanner:
     
     def test_analyze_bandwidth_usage(self):
         """Test bandwidth usage analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock packets with size information
         packets = [
@@ -190,7 +190,7 @@ class TestTrafficScanner:
     
     def test_detect_port_scans(self):
         """Test port scan detection"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock packets indicating port scan
         scan_packets = []
@@ -210,7 +210,7 @@ class TestTrafficScanner:
     
     def test_analyze_connection_patterns(self):
         """Test connection pattern analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock connection packets
         connection_packets = [
@@ -229,7 +229,7 @@ class TestTrafficScanner:
     
     def test_detect_ddos_patterns(self):
         """Test DDoS pattern detection"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock DDoS-like traffic
         ddos_packets = []
@@ -250,7 +250,7 @@ class TestTrafficScanner:
     
     def test_analyze_protocol_distribution(self):
         """Test protocol distribution analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock packets with different protocols
         protocol_packets = [
@@ -270,7 +270,7 @@ class TestTrafficScanner:
     
     def test_extract_file_transfers(self):
         """Test file transfer extraction"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock HTTP file transfer packets
         file_packets = [
@@ -295,7 +295,7 @@ class TestTrafficScanner:
     
     def test_generate_traffic_report(self):
         """Test traffic analysis report generation"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         results = {
             'packet_capture': {
@@ -331,7 +331,7 @@ class TestTrafficScanner:
     
     def test_calculate_threat_score(self):
         """Test threat score calculation"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Test high threat scenario
         high_threat_analysis = {
@@ -374,7 +374,7 @@ class TestTrafficScanner:
     
     def test_analyze_encrypted_traffic(self):
         """Test encrypted traffic analysis"""
-        scanner = TrafficScanner()
+        scanner = TrafficAnalysisScanner()
         
         # Mock encrypted traffic packets
         encrypted_packets = [
