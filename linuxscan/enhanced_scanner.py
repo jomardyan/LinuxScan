@@ -776,489 +776,175 @@ class SecurityScanner:
             recommendations.append("No critical security issues found")
         
         return recommendations
-                
-                # Database scanning
-                if 'database_scanner' in scan_modules:
-                    db_ports = [3306, 5432, 27017, 6379, 9200]
-                    for port in db_ports:
-                        if port in open_ports:
-                            db_results = await self.database_scanner.scan(host, port=port)
-                            host_results['scan_results'][f'database_scan_{port}'] = db_results
-            
-            # SSH scanning (standalone if SSH port scanning is not enabled)
-            if 'ssh_scanner' in scan_modules and 'port_scanner' not in scan_modules:
-                ssh_results = await self.ssh_scanner.scan(host, **kwargs)
-                host_results['scan_results']['ssh_scan'] = ssh_results
-            
-            # Network scanning
-            if 'network_scanner' in scan_modules:
-                network_results = await self.network_scanner.scan(host)
-                host_results['scan_results']['network_scan'] = network_results
-            
-            # Configuration scanning
-            if 'config_scanner' in scan_modules:
-                config_results = await self.config_scanner.scan(host)
-                host_results['scan_results']['config_scan'] = config_results
-            
-            # Malware scanning
-            if 'malware_scanner' in scan_modules:
-                malware_results = await self.malware_scanner.scan(host)
-                host_results['scan_results']['malware_scan'] = malware_results
-            
-            # Forensics scanning
-            if 'forensics_scanner' in scan_modules:
-                forensics_results = await self.forensics_scanner.scan(host)
-                host_results['scan_results']['forensics_scan'] = forensics_results
-            
-            # Compile vulnerabilities from all modules
-            host_results['vulnerabilities'] = self._compile_host_vulnerabilities(host_results['scan_results'])
-            
-            # Calculate security score
-            host_results['security_score'] = self._calculate_host_security_score(host_results)
-            
-            # Generate recommendations
-            host_results['recommendations'] = self._generate_host_recommendations(host_results)
-            
-        except Exception as e:
-            host_results['error'] = str(e)
-        
-        return host_results
     
     async def scan_network(self, targets: List[str], scan_modules: List[str] = None, **kwargs) -> Dict[str, Any]:
-        """Scan multiple targets"""
-        self.scan_start_time = datetime.now()
+        """Scan multiple targets concurrently with enhanced error handling"""
+        if scan_modules is None:
+            scan_modules = ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner', 'ssh_scanner']
         
-        # Parse targets
-        parsed_targets = self.parse_targets(targets)
-        self.total_hosts = len(parsed_targets)
+        self.scan_start_time = time.time()
+        self.total_hosts = len(targets)
+        self.scanned_hosts = 0
+        self.vulnerable_hosts = 0
         
-        console.print(f"[green]Starting comprehensive security scan of {self.total_hosts} hosts[/green]")
-        console.print(f"[blue]Scan modules: {scan_modules or 'default'}[/blue]")
+        network_results = {
+            'targets': targets,
+            'scan_modules': scan_modules,
+            'timestamp': datetime.now().isoformat(),
+            'scan_duration': 0,
+            'total_hosts': self.total_hosts,
+            'scanned_hosts': 0,
+            'vulnerable_hosts': 0,
+            'results': {},
+            'summary': {},
+            'errors': []
+        }
         
-        # Progress tracking
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TimeRemainingColumn(),
-            console=console
-        ) as progress:
-            
-            scan_task = progress.add_task("Scanning hosts...", total=self.total_hosts)
-            
-            # Scan hosts concurrently
-            semaphore = asyncio.Semaphore(self.max_workers)
-            
-            async def scan_with_progress(host):
-                async with semaphore:
-                    if scan_modules is not None:
-                        result = await self.scan_host(host, scan_modules, **kwargs)
+        try:
+            with LoggedOperation("network_scan", f"{len(targets)} targets", self.logger):
+                
+                # Create semaphore to limit concurrent scans
+                semaphore = asyncio.Semaphore(min(self.max_workers, len(targets)))
+                
+                async def scan_with_progress(host):
+                    async with semaphore:
+                        try:
+                            result = await self.scan_host(host, scan_modules, **kwargs)
+                            self.scanned_hosts += 1
+                            
+                            # Count vulnerable hosts
+                            if result.get('vulnerabilities') or result.get('errors'):
+                                self.vulnerable_hosts += 1
+                            
+                            return host, result
+                        except Exception as e:
+                            self.logger.error(f"Error scanning {host}: {e}")
+                            network_results['errors'].append(f"Error scanning {host}: {e}")
+                            return host, {'error': str(e), 'host': host}
+                
+                # Execute scans concurrently
+                tasks = [scan_with_progress(host) for host in targets]
+                completed_scans = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # Process results
+                for result in completed_scans:
+                    if isinstance(result, Exception):
+                        network_results['errors'].append(f"Scan task failed: {result}")
                     else:
-                        result = await self.scan_host(host, **kwargs)
-                    progress.advance(scan_task)
-                    self.scanned_hosts += 1
-                    
-                    # Count vulnerable hosts
-                    if result.get('vulnerabilities'):
-                        self.vulnerable_hosts += 1
-                    
-                    return host, result
-            
-            # Execute scans
-            tasks = [scan_with_progress(host) for host in parsed_targets]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            # Process results
-            for result in results:
-                if isinstance(result, Exception):
-                    console.print(f"[red]Error during scan: {result}[/red]")
-                    continue
+                        host, scan_result = result
+                        network_results['results'][host] = scan_result
                 
-                host, host_result = result
-                self.results[host] = host_result
+                # Calculate summary
+                network_results['scanned_hosts'] = self.scanned_hosts
+                network_results['vulnerable_hosts'] = self.vulnerable_hosts
+                network_results['scan_duration'] = time.time() - self.scan_start_time
+                
+                # Generate summary statistics
+                network_results['summary'] = self._generate_network_summary(network_results)
+                
+        except Exception as e:
+            error_msg = f"Network scan failed: {e}"
+            network_results['errors'].append(error_msg)
+            self.logger.error(error_msg, exc_info=True)
         
-        self.scan_end_time = datetime.now()
-        
-        # Generate summary
-        summary = self._generate_scan_summary()
-        
-        return {
-            'summary': summary,
-            'results': self.results,
-            'scan_duration': (self.scan_end_time - self.scan_start_time).total_seconds(),
-            'total_hosts': self.total_hosts,
-            'scanned_hosts': self.scanned_hosts,
-            'vulnerable_hosts': self.vulnerable_hosts
-        }
+        return network_results
     
-    def _compile_host_vulnerabilities(self, scan_results: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Compile vulnerabilities from all scan modules"""
-        vulnerabilities = []
-        
-        for module_name, module_results in scan_results.items():
-            if isinstance(module_results, dict) and 'vulnerabilities' in module_results:
-                for vuln in module_results['vulnerabilities']:
-                    vuln['source_module'] = module_name
-                    vulnerabilities.append(vuln)
-        
-        return vulnerabilities
-    
-    def _calculate_host_security_score(self, host_results: Dict[str, Any]) -> int:
-        """Calculate security score for a host"""
-        base_score = 100
-        vulnerabilities = host_results.get('vulnerabilities', [])
-        
-        # Deduct points based on vulnerability severity
-        for vuln in vulnerabilities:
-            severity = vuln.get('severity', 'Low').lower()
-            if severity == 'critical':
-                base_score -= 20
-            elif severity == 'high':
-                base_score -= 10
-            elif severity == 'medium':
-                base_score -= 5
-            elif severity == 'low':
-                base_score -= 2
-        
-        return max(0, base_score)
-    
-    def _generate_host_recommendations(self, host_results: Dict[str, Any]) -> List[str]:
-        """Generate recommendations for a host"""
-        recommendations = []
-        
-        # Compile recommendations from all modules
-        for module_name, module_results in host_results.get('scan_results', {}).items():
-            if isinstance(module_results, dict) and 'recommendations' in module_results:
-                recommendations.extend(module_results['recommendations'])
-        
-        # Remove duplicates while preserving order
-        unique_recommendations = []
-        seen = set()
-        for rec in recommendations:
-            if rec not in seen:
-                unique_recommendations.append(rec)
-                seen.add(rec)
-        
-        return unique_recommendations
-    
-    def _generate_scan_summary(self) -> Dict[str, Any]:
-        """Generate scan summary"""
-        # Calculate scan duration safely
-        if self.scan_end_time and self.scan_start_time:
-            scan_duration = (self.scan_end_time - self.scan_start_time).total_seconds()
-        else:
-            scan_duration = 0.0
-            
+    def _generate_network_summary(self, network_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate network scan summary"""
         summary = {
-            'total_hosts': self.total_hosts,
-            'scanned_hosts': self.scanned_hosts,
-            'vulnerable_hosts': self.vulnerable_hosts,
-            'scan_duration': scan_duration,
-            'vulnerability_summary': {
-                'critical': 0,
-                'high': 0,
-                'medium': 0,
-                'low': 0
-            },
-            'top_vulnerabilities': [],
-            'security_score_distribution': {}
+            'total_hosts': network_results['total_hosts'],
+            'scanned_hosts': network_results['scanned_hosts'],
+            'vulnerable_hosts': network_results['vulnerable_hosts'],
+            'scan_duration': network_results['scan_duration'],
+            'average_scan_time': network_results['scan_duration'] / max(network_results['scanned_hosts'], 1),
+            'error_count': len(network_results['errors']),
+            'total_vulnerabilities': 0,
+            'critical_vulnerabilities': 0,
+            'high_vulnerabilities': 0,
+            'medium_vulnerabilities': 0,
+            'low_vulnerabilities': 0,
+            'total_open_ports': 0,
+            'unique_services': set(),
+            'security_score_average': 0
         }
         
-        # Analyze vulnerabilities
-        all_vulnerabilities = []
-        vulnerability_counts = {}
+        security_scores = []
         
-        for host, host_result in self.results.items():
-            vulnerabilities = host_result.get('vulnerabilities', [])
-            all_vulnerabilities.extend(vulnerabilities)
-            
-            # Count by severity
-            for vuln in vulnerabilities:
-                severity = vuln.get('severity', 'Low').lower()
-                if severity in summary['vulnerability_summary']:
-                    summary['vulnerability_summary'][severity] += 1
+        for host, result in network_results['results'].items():
+            if 'error' in result:
+                continue
                 
-                # Count vulnerability types
-                vuln_type = vuln.get('type', 'Unknown')
-                vulnerability_counts[vuln_type] = vulnerability_counts.get(vuln_type, 0) + 1
+            # Count vulnerabilities
+            vulnerabilities = result.get('vulnerabilities', [])
+            summary['total_vulnerabilities'] += len(vulnerabilities)
+            
+            for vuln in vulnerabilities:
+                severity = vuln.get('severity', 'low').lower()
+                if severity == 'critical':
+                    summary['critical_vulnerabilities'] += 1
+                elif severity == 'high':
+                    summary['high_vulnerabilities'] += 1
+                elif severity == 'medium':
+                    summary['medium_vulnerabilities'] += 1
+                elif severity == 'low':
+                    summary['low_vulnerabilities'] += 1
+            
+            # Count open ports
+            port_scan = result.get('scan_results', {}).get('port_scan', {})
+            open_ports = port_scan.get('open_ports', {})
+            summary['total_open_ports'] += len(open_ports)
+            
+            # Collect unique services
+            service_detection = port_scan.get('service_detection', {})
+            for service in service_detection.values():
+                if service:
+                    summary['unique_services'].add(service)
+            
+            # Collect security scores
+            security_score = result.get('security_score', 0)
+            if security_score > 0:
+                security_scores.append(security_score)
         
-        # Top vulnerabilities
-        summary['top_vulnerabilities'] = sorted(
-            vulnerability_counts.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:10]
+        # Calculate average security score
+        if security_scores:
+            summary['security_score_average'] = sum(security_scores) / len(security_scores)
         
-        # Security score distribution
-        scores = [host_result.get('security_score', 0) for host_result in self.results.values()]
-        if scores:
-            summary['security_score_distribution'] = {
-                'average': sum(scores) / len(scores),
-                'minimum': min(scores),
-                'maximum': max(scores),
-                'median': sorted(scores)[len(scores) // 2]
-            }
+        summary['unique_services'] = list(summary['unique_services'])
         
         return summary
-    
-    def analyze_vulnerabilities(self, scan_data: Dict[str, Any]) -> List[str]:
-        """Analyze scan data for vulnerabilities"""
-        vulnerabilities = []
-        
-        # Check for open ports with known vulnerabilities
-        open_ports = scan_data.get('open_ports', {})
-        for port, info in open_ports.items():
-            service = info.get('service', '').lower()
-            
-            # Check for insecure services
-            if 'telnet' in service:
-                vulnerabilities.append(f"Insecure Telnet service on port {port}")
-            elif 'ftp' in service and port == 21:
-                vulnerabilities.append(f"Unencrypted FTP service on port {port}")
-            elif 'http' in service and port == 80:
-                vulnerabilities.append(f"Unencrypted HTTP service on port {port}")
-        
-        # Check SSL/TLS vulnerabilities
-        ssl_certs = scan_data.get('ssl_certificates', {})
-        for port, cert_info in ssl_certs.items():
-            if cert_info.get('expired', False):
-                vulnerabilities.append(f"Expired SSL certificate on port {port}")
-            if cert_info.get('expires_soon', False):
-                vulnerabilities.append(f"SSL certificate expires soon on port {port}")
-        
-        # Check SSH security
-        ssh_security = scan_data.get('ssh_security', {})
-        if ssh_security:
-            weak_algorithms = ssh_security.get('weak_algorithms', [])
-            for algo in weak_algorithms:
-                vulnerabilities.append(f"Weak SSH algorithm: {algo}")
-        
-        return vulnerabilities
-    
-    def calculate_security_score(self, scan_data: Dict[str, Any]) -> Tuple[int, str]:
-        """Calculate security score and rating"""
-        base_score = 100
-        
-        # Deduct points for vulnerabilities
-        vulnerabilities = scan_data.get('vulnerabilities', [])
-        base_score -= len(vulnerabilities) * 5
-        
-        # Deduct points for open ports
-        open_ports = scan_data.get('open_ports', {})
-        base_score -= len(open_ports) * 2
-        
-        # Deduct points for insecure services
-        insecure_services = ['telnet', 'ftp', 'http']
-        for port, info in open_ports.items():
-            service = info.get('service', '').lower()
-            if any(insecure in service for insecure in insecure_services):
-                base_score -= 10
-        
-        # Ensure score is not negative
-        score = max(0, base_score)
-        
-        # Determine rating
-        if score >= 90:
-            rating = "Excellent"
-        elif score >= 80:
-            rating = "Good"
-        elif score >= 70:
-            rating = "Fair"
-        elif score >= 60:
-            rating = "Poor"
-        else:
-            rating = "Critical"
-        
-        return score, rating
-    
-    def export_json(self, filename: str):
-        """Export results to JSON"""
-        try:
-            with open(filename, 'w') as f:
-                json.dump(self.results, f, indent=2, default=str)
-            console.print(f"[green]Results exported to {filename}[/green]")
-        except Exception as e:
-            console.print(f"[red]Error exporting to JSON: {e}[/red]")
-    
-    def export_csv(self, filename: str):
-        """Export results to CSV"""
-        try:
-            with open(filename, 'w', newline='') as f:
-                writer = csv.writer(f)
-                
-                # Write header
-                writer.writerow(['Host', 'Security Score', 'Vulnerabilities', 'Open Ports', 'Recommendations'])
-                
-                # Write data
-                for host, result in self.results.items():
-                    vulnerabilities = len(result.get('vulnerabilities', []))
-                    open_ports = len(result.get('scan_results', {}).get('port_scan', {}).get('open_ports', {}))
-                    recommendations = len(result.get('recommendations', []))
-                    security_score = result.get('security_score', 0)
-                    
-                    writer.writerow([host, security_score, vulnerabilities, open_ports, recommendations])
-                    
-            console.print(f"[green]Results exported to {filename}[/green]")
-        except Exception as e:
-            console.print(f"[red]Error exporting to CSV: {e}[/red]")
-    
-    def export_html(self, filename: str):
-        """Export results to HTML"""
-        try:
-            html_content = self._generate_html_report()
-            with open(filename, 'w') as f:
-                f.write(html_content)
-            console.print(f"[green]Results exported to {filename}[/green]")
-        except Exception as e:
-            console.print(f"[red]Error exporting to HTML: {e}[/red]")
-    
-    def _generate_html_report(self) -> str:
-        """Generate HTML report"""
-        html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>LinuxScan Security Report</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .header { background-color: #2e3440; color: white; padding: 20px; text-align: center; }
-                .summary { background-color: #f8f9fa; padding: 15px; margin: 20px 0; }
-                .host { border: 1px solid #dee2e6; margin: 10px 0; padding: 15px; }
-                .vulnerability { background-color: #fff3cd; padding: 8px; margin: 5px 0; border-left: 4px solid #ffc107; }
-                .critical { border-left-color: #dc3545; background-color: #f8d7da; }
-                .high { border-left-color: #fd7e14; background-color: #fff3cd; }
-                .medium { border-left-color: #ffc107; background-color: #fff3cd; }
-                .low { border-left-color: #28a745; background-color: #d1edff; }
-                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-                th { background-color: #e9ecef; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>LinuxScan Comprehensive Security Report</h1>
-                <p>Generated on """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</p>
-            </div>
-        """
-        
-        # Add summary
-        summary = self._generate_scan_summary()
-        html += f"""
-            <div class="summary">
-                <h2>Scan Summary</h2>
-                <p><strong>Total Hosts:</strong> {summary['total_hosts']}</p>
-                <p><strong>Scanned Hosts:</strong> {summary['scanned_hosts']}</p>
-                <p><strong>Vulnerable Hosts:</strong> {summary['vulnerable_hosts']}</p>
-                <p><strong>Scan Duration:</strong> {summary['scan_duration']:.2f} seconds</p>
-            </div>
-        """
-        
-        # Add vulnerability summary
-        html += """
-            <div class="summary">
-                <h2>Vulnerability Summary</h2>
-                <table>
-                    <tr><th>Severity</th><th>Count</th></tr>
-        """
-        
-        for severity, count in summary['vulnerability_summary'].items():
-            html += f"<tr><td>{severity.capitalize()}</td><td>{count}</td></tr>"
-        
-        html += """
-                </table>
-            </div>
-        """
-        
-        # Add individual host results
-        for host, result in self.results.items():
-            html += f"""
-                <div class="host">
-                    <h3>Host: {host}</h3>
-                    <p><strong>Security Score:</strong> {result.get('security_score', 0)}</p>
-                    <p><strong>Vulnerabilities:</strong> {len(result.get('vulnerabilities', []))}</p>
-                    
-                    <h4>Vulnerabilities</h4>
-            """
-            
-            for vuln in result.get('vulnerabilities', []):
-                severity = vuln.get('severity', 'low').lower()
-                html += f"""
-                    <div class="vulnerability {severity}">
-                        <strong>{vuln.get('type', 'Unknown')}</strong>: {vuln.get('description', 'No description')}
-                    </div>
-                """
-            
-            html += """
-                </div>
-            """
-        
-        html += """
-        </body>
-        </html>
-        """
-        
-        return html
-    
-    def generate_summary_table(self) -> Table:
-        """Generate summary table for display"""
-        table = Table(title="Security Scan Summary")
-        
-        table.add_column("Host", style="cyan")
-        table.add_column("Security Score", style="green")
-        table.add_column("Vulnerabilities", style="red")
-        table.add_column("Open Ports", style="yellow")
-        table.add_column("Status", style="bold")
-        
-        for host, result in self.results.items():
-            vulnerabilities = len(result.get('vulnerabilities', []))
-            open_ports = len(result.get('scan_results', {}).get('port_scan', {}).get('open_ports', {}))
-            security_score = result.get('security_score', 0)
-            
-            if security_score >= 80:
-                status = "[green]Good[/green]"
-            elif security_score >= 60:
-                status = "[yellow]Fair[/yellow]"
-            else:
-                status = "[red]Poor[/red]"
-            
-            table.add_row(
-                host,
-                str(security_score),
-                str(vulnerabilities),
-                str(open_ports),
-                status
-            )
-        
-        return table
 
 
 def display_banner():
-    """Display application banner"""
+    """Display the LinuxScan banner"""
     banner = """
-    ╔══════════════════════════════════════════════════════════════════════════════════════╗
-    ║                        LinuxScan - Comprehensive Security Scanner                    ║
-    ║                             Professional Security Assessment Tool                     ║
-    ║                                      Version 1.0.0                                  ║
-    ╚══════════════════════════════════════════════════════════════════════════════════════╝
+    ╔═══════════════════════════════════════════════════════════════════════════════════╗
+    ║                        🛡️  LinuxScan Security Scanner 🛡️                        ║
+    ║                                                                                   ║
+    ║                   Professional Linux Security Assessment Tool                     ║
+    ║                              Version 1.0.0                                       ║
+    ║                                                                                   ║
+    ║                        Author: Security Scanner Team                             ║
+    ║                         License: Apache 2.0                                      ║
+    ╚═══════════════════════════════════════════════════════════════════════════════════╝
     """
-    console.print(banner, style="bold blue")
+    console.print(banner, style="bold cyan")
 
 
 def display_help():
-    """Display help information"""
+    """Display enhanced help information"""
     help_text = """
-    [bold]LinuxScan - Comprehensive Security Scanner[/bold]
+    [bold cyan]LinuxScan - Professional Linux Security Scanner[/bold cyan]
     
     [yellow]USAGE:[/yellow]
-        linuxscan [OPTIONS] TARGETS
-    
+        linuxscan [targets] [options]
+        
     [yellow]TARGETS:[/yellow]
-        Single IP:      192.168.1.1
-        CIDR Range:     192.168.1.0/24
-        Multiple IPs:   192.168.1.1,192.168.1.2,192.168.1.3
-        Hostname:       example.com
-    
+        Single IP:     192.168.1.1
+        IP Range:      192.168.1.1-192.168.1.100
+        CIDR Range:    192.168.1.0/24
+        Hostname:      example.com
+        Multiple:      192.168.1.1,192.168.1.2,example.com
+        
     [yellow]OPTIONS:[/yellow]
         --modules, -m           Scan modules to use (comma-separated)
         --timeout, -t           Connection timeout in seconds (default: 5)
