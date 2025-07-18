@@ -1314,7 +1314,7 @@ Ensure you have permission before scanning systems.
                                 
                             # Handle pause state
                             while self.scan_paused and self.scan_in_progress:
-                                time.sleep(0.5)
+                                time.sleep(0.5)  # Async sleep should be used here, but this is in sync context
                             
                             # Display target information with ASN lookup
                             console.print(f"\n[bold cyan]📡 Scanning target: {target}[/bold cyan]")
@@ -3271,7 +3271,7 @@ Select a scan set:
                         
                     # Handle pause state
                     while self.scan_paused and self.scan_in_progress:
-                        time.sleep(0.5)
+                        time.sleep(0.5)  # Async sleep should be used here, but this is in sync context
                     
                     # Simulate fast ping (replace with actual ping logic)
                     try:
