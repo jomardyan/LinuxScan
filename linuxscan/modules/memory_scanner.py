@@ -429,100 +429,100 @@ class MemoryAnalysisScanner(BaseScannerModule):
                 'output': '',
                 'error': str(e),
                 'success': False
-
-    async def _memory_acquisition(self, *args, **kwargs):
-        """Stub method for _memory_acquisition"""
-        return {'status': 'not_implemented', 'method': '_memory_acquisition'}
-
-    async def _volatility_analysis(self, *args, **kwargs):
-        """Stub method for _volatility_analysis"""
-        return {'status': 'not_implemented', 'method': '_volatility_analysis'}
-
-    def _analyze_process_list(self, *args, **kwargs):
-        """Stub method for _analyze_process_list"""
-        return {'status': 'not_implemented', 'method': '_analyze_process_list'}
-
-    async def _detect_process_injection(self, *args, **kwargs):
-        """Stub method for _detect_process_injection"""
-        return {'status': 'not_implemented', 'method': '_detect_process_injection'}
-
-    async def _detect_rootkit_indicators(self, *args, **kwargs):
-        """Stub method for _detect_rootkit_indicators"""
-        return {'status': 'not_implemented', 'method': '_detect_rootkit_indicators'}
-
-    def _analyze_syscall_table(self, *args, **kwargs):
-        """Stub method for _analyze_syscall_table"""
-        return {'status': 'not_implemented', 'method': '_analyze_syscall_table'}
-
-    async def _extract_memory_artifacts(self, *args, **kwargs):
-        """Stub method for _extract_memory_artifacts"""
-        return {'status': 'not_implemented', 'method': '_extract_memory_artifacts'}
-
-    def _analyze_heap_spray(self, *args, **kwargs):
-        """Stub method for _analyze_heap_spray"""
-        return {'status': 'not_implemented', 'method': '_analyze_heap_spray'}
-
-    async def _detect_code_injection(self, *args, **kwargs):
-        """Stub method for _detect_code_injection"""
-        return {'status': 'not_implemented', 'method': '_detect_code_injection'}
-
-    def _analyze_driver_integrity(self, *args, **kwargs):
-        """Stub method for _analyze_driver_integrity"""
-        return {'status': 'not_implemented', 'method': '_analyze_driver_integrity'}
-
-    def _generate_memory_report(self, *args, **kwargs):
-        """Stub method for _generate_memory_report"""
-        return {'status': 'not_implemented', 'method': '_generate_memory_report'}
-
-    def _calculate_memory_risk_score(self, *args, **kwargs):
-        """Stub method for _calculate_memory_risk_score"""
-        return {'status': 'not_implemented', 'method': '_calculate_memory_risk_score'}
-
-    async def _memory_acquisition(self, *args, **kwargs):
-        """Stub method for _memory_acquisition"""
-        return {'status': 'not_implemented', 'method': '_memory_acquisition'}
-
-    async def _volatility_analysis(self, *args, **kwargs):
-        """Stub method for _volatility_analysis"""
-        return {'status': 'not_implemented', 'method': '_volatility_analysis'}
-
-    def _analyze_process_list(self, *args, **kwargs):
-        """Stub method for _analyze_process_list"""
-        return {'status': 'not_implemented', 'method': '_analyze_process_list'}
-
-    async def _detect_process_injection(self, *args, **kwargs):
-        """Stub method for _detect_process_injection"""
-        return {'status': 'not_implemented', 'method': '_detect_process_injection'}
-
-    async def _detect_rootkit_indicators(self, *args, **kwargs):
-        """Stub method for _detect_rootkit_indicators"""
-        return {'status': 'not_implemented', 'method': '_detect_rootkit_indicators'}
-
-    def _analyze_syscall_table(self, *args, **kwargs):
-        """Stub method for _analyze_syscall_table"""
-        return {'status': 'not_implemented', 'method': '_analyze_syscall_table'}
-
-    async def _extract_memory_artifacts(self, *args, **kwargs):
-        """Stub method for _extract_memory_artifacts"""
-        return {'status': 'not_implemented', 'method': '_extract_memory_artifacts'}
-
-    def _analyze_heap_spray(self, *args, **kwargs):
-        """Stub method for _analyze_heap_spray"""
-        return {'status': 'not_implemented', 'method': '_analyze_heap_spray'}
-
-    async def _detect_code_injection(self, *args, **kwargs):
-        """Stub method for _detect_code_injection"""
-        return {'status': 'not_implemented', 'method': '_detect_code_injection'}
-
-    def _analyze_driver_integrity(self, *args, **kwargs):
-        """Stub method for _analyze_driver_integrity"""
-        return {'status': 'not_implemented', 'method': '_analyze_driver_integrity'}
-
-    def _generate_memory_report(self, *args, **kwargs):
-        """Stub method for _generate_memory_report"""
-        return {'status': 'not_implemented', 'method': '_generate_memory_report'}
-
-    def _calculate_memory_risk_score(self, *args, **kwargs):
-        """Stub method for _calculate_memory_risk_score"""
-        return {'status': 'not_implemented', 'method': '_calculate_memory_risk_score'}
             }
+
+    async def _memory_acquisition(self, *args, **kwargs):
+        """Stub method for _memory_acquisition"""
+        return {'status': 'not_implemented', 'method': '_memory_acquisition'}
+
+    async def _volatility_analysis(self, *args, **kwargs):
+        """Stub method for _volatility_analysis"""
+        return {'status': 'not_implemented', 'method': '_volatility_analysis'}
+
+    def _analyze_process_list(self, *args, **kwargs):
+        """Stub method for _analyze_process_list"""
+        return {'status': 'not_implemented', 'method': '_analyze_process_list'}
+
+    async def _detect_process_injection(self, *args, **kwargs):
+        """Stub method for _detect_process_injection"""
+        return {'status': 'not_implemented', 'method': '_detect_process_injection'}
+
+    async def _detect_rootkit_indicators(self, *args, **kwargs):
+        """Stub method for _detect_rootkit_indicators"""
+        return {'status': 'not_implemented', 'method': '_detect_rootkit_indicators'}
+
+    def _analyze_syscall_table(self, *args, **kwargs):
+        """Stub method for _analyze_syscall_table"""
+        return {'status': 'not_implemented', 'method': '_analyze_syscall_table'}
+
+    async def _extract_memory_artifacts(self, *args, **kwargs):
+        """Stub method for _extract_memory_artifacts"""
+        return {'status': 'not_implemented', 'method': '_extract_memory_artifacts'}
+
+    def _analyze_heap_spray(self, *args, **kwargs):
+        """Stub method for _analyze_heap_spray"""
+        return {'status': 'not_implemented', 'method': '_analyze_heap_spray'}
+
+    async def _detect_code_injection(self, *args, **kwargs):
+        """Stub method for _detect_code_injection"""
+        return {'status': 'not_implemented', 'method': '_detect_code_injection'}
+
+    def _analyze_driver_integrity(self, *args, **kwargs):
+        """Stub method for _analyze_driver_integrity"""
+        return {'status': 'not_implemented', 'method': '_analyze_driver_integrity'}
+
+    def _generate_memory_report(self, *args, **kwargs):
+        """Stub method for _generate_memory_report"""
+        return {'status': 'not_implemented', 'method': '_generate_memory_report'}
+
+    def _calculate_memory_risk_score(self, *args, **kwargs):
+        """Stub method for _calculate_memory_risk_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_memory_risk_score'}
+
+    async def _memory_acquisition(self, *args, **kwargs):
+        """Stub method for _memory_acquisition"""
+        return {'status': 'not_implemented', 'method': '_memory_acquisition'}
+
+    async def _volatility_analysis(self, *args, **kwargs):
+        """Stub method for _volatility_analysis"""
+        return {'status': 'not_implemented', 'method': '_volatility_analysis'}
+
+    def _analyze_process_list(self, *args, **kwargs):
+        """Stub method for _analyze_process_list"""
+        return {'status': 'not_implemented', 'method': '_analyze_process_list'}
+
+    async def _detect_process_injection(self, *args, **kwargs):
+        """Stub method for _detect_process_injection"""
+        return {'status': 'not_implemented', 'method': '_detect_process_injection'}
+
+    async def _detect_rootkit_indicators(self, *args, **kwargs):
+        """Stub method for _detect_rootkit_indicators"""
+        return {'status': 'not_implemented', 'method': '_detect_rootkit_indicators'}
+
+    def _analyze_syscall_table(self, *args, **kwargs):
+        """Stub method for _analyze_syscall_table"""
+        return {'status': 'not_implemented', 'method': '_analyze_syscall_table'}
+
+    async def _extract_memory_artifacts(self, *args, **kwargs):
+        """Stub method for _extract_memory_artifacts"""
+        return {'status': 'not_implemented', 'method': '_extract_memory_artifacts'}
+
+    def _analyze_heap_spray(self, *args, **kwargs):
+        """Stub method for _analyze_heap_spray"""
+        return {'status': 'not_implemented', 'method': '_analyze_heap_spray'}
+
+    async def _detect_code_injection(self, *args, **kwargs):
+        """Stub method for _detect_code_injection"""
+        return {'status': 'not_implemented', 'method': '_detect_code_injection'}
+
+    def _analyze_driver_integrity(self, *args, **kwargs):
+        """Stub method for _analyze_driver_integrity"""
+        return {'status': 'not_implemented', 'method': '_analyze_driver_integrity'}
+
+    def _generate_memory_report(self, *args, **kwargs):
+        """Stub method for _generate_memory_report"""
+        return {'status': 'not_implemented', 'method': '_generate_memory_report'}
+
+    def _calculate_memory_risk_score(self, *args, **kwargs):
+        """Stub method for _calculate_memory_risk_score"""
+        return {'status': 'not_implemented', 'method': '_calculate_memory_risk_score'}

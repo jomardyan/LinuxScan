@@ -150,7 +150,6 @@ crypto_results = await scanner.crypto_scanner.scan('example.com')
 ### Basic Scans
 1. **Quick Scan** - Fast port and vulnerability scanning
 2. **Advanced Scan** - Custom module selection with detailed configuration
-3. **Mode Scan** - Interactive scan mode selection (9 modes available)
 4. **Network Discovery** - Network topology and device discovery
 
 ### Security Assessments

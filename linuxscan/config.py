@@ -80,6 +80,7 @@ class ScanConfig:
     enable_vuln_check: bool = True
     output_format: str = "json"
     verbose: bool = False
+    quiet: bool = False
     save_raw_output: bool = False
     custom_ports: Optional[List[int]] = None
     excluded_ports: Optional[List[int]] = None

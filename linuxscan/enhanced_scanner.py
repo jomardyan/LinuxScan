@@ -571,6 +571,9 @@ class SecurityScanner:
                 if 'vulnerability_scanner' in scan_modules and self.vulnerability_scanner:
                     try:
                         self.logger.info(f"Starting vulnerability scan on {host}")
+                        # Initialize service_detection if not already defined (when port_scanner wasn't run first)
+                        if not locals().get('service_detection'):
+                            service_detection = {}
                         vuln_results = await self.vulnerability_scanner.scan(
                             host, services=service_detection
                         )
@@ -678,12 +681,17 @@ class SecurityScanner:
             ipaddress.ip_address(host)
             return True
         except ValueError:
-            # Check if it's a valid hostname
+            # Check if it's a valid CIDR notation
             try:
-                socket.gethostbyname(host)
+                ipaddress.ip_network(host, strict=False)
                 return True
-            except socket.gaierror:
-                return False
+            except ValueError:
+                # Check if it's a valid hostname
+                try:
+                    socket.gethostbyname(host)
+                    return True
+                except socket.gaierror:
+                    return False
     
     def _calculate_security_score(self, host_results: Dict[str, Any]) -> int:
         """Calculate security score based on scan results"""
@@ -781,6 +789,28 @@ class SecurityScanner:
         """Scan multiple targets concurrently with enhanced error handling"""
         if scan_modules is None:
             scan_modules = ['port_scanner', 'vulnerability_scanner', 'network_scanner', 'web_scanner', 'ssh_scanner']
+        
+        # Expand CIDR notations into individual IP addresses
+        expanded_targets = []
+        for target in targets:
+            try:
+                # Check if target is CIDR notation
+                if '/' in target:
+                    network = ipaddress.ip_network(target, strict=False)
+                    if network.num_addresses > 256:
+                        self.logger.warning(f"CIDR range {target} contains {network.num_addresses} addresses, limiting to first 256")
+                        hosts = list(network.hosts())[:256]
+                    else:
+                        hosts = list(network.hosts())
+                    expanded_targets.extend([str(ip) for ip in hosts])
+                else:
+                    expanded_targets.append(target)
+            except ValueError:
+                # If not a valid CIDR, just keep the original target
+                expanded_targets.append(target)
+                
+        self.logger.info(f"Expanded {len(targets)} targets to {len(expanded_targets)} individual hosts")
+        targets = expanded_targets
         
         self.scan_start_time = time.time()
         self.total_hosts = len(targets)
