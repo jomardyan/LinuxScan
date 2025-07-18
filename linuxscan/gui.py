@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author: Hayk Jomardyan
+#
 """
 LinuxScan GUI - Interactive Interface
 Comprehensive GUI for LinuxScan security scanner
@@ -8,6 +23,15 @@ import asyncio
 import json
 import threading
 import time
+import signal
+import sys
+import os
+import platform
+import psutil
+import subprocess
+import ipaddress
+import socket
+import requests
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -45,15 +69,247 @@ class LinuxScanGUI:
         self.config_manager = ConfigManager()
         self.current_scan_results = None
         self.scan_in_progress = False
+        self.scan_paused = False
+        self.scan_thread = None
+        self.setup_signal_handlers()
+        
+    def setup_signal_handlers(self):
+        """Setup signal handlers for keyboard shortcuts"""
+        signal.signal(signal.SIGINT, self.handle_ctrl_c)
+        signal.signal(signal.SIGTSTP, self.handle_ctrl_z)
+        
+    def handle_ctrl_c(self, signum, frame):
+        """Handle Ctrl+C - Stop scan"""
+        if self.scan_in_progress:
+            console.print("\n[bold red]🛑 Scan stopped by user (Ctrl+C)[/bold red]")
+            self.scan_in_progress = False
+            self.scan_paused = False
+            if self.scan_thread:
+                self.scan_thread.join(timeout=1)
+        else:
+            console.print("\n[bold red]Exiting LinuxScan...[/bold red]")
+            sys.exit(0)
+            
+    def handle_ctrl_z(self, signum, frame):
+        """Handle Ctrl+Z - Pause/Resume scan"""
+        if self.scan_in_progress:
+            if self.scan_paused:
+                console.print("\n[bold green]▶️  Scan resumed (Ctrl+Z)[/bold green]")
+                self.scan_paused = False
+            else:
+                console.print("\n[bold yellow]⏸️  Scan paused (Ctrl+Z to resume)[/bold yellow]")
+                self.scan_paused = True
         
     def clear_screen(self):
         """Clear the console screen"""
         console.clear()
         
+    def get_system_info(self):
+        """Get basic system information"""
+        try:
+            # Get CPU information
+            cpu_count = psutil.cpu_count()
+            cpu_freq = psutil.cpu_freq()
+            cpu_usage = psutil.cpu_percent(interval=1)
+            
+            # Get memory information
+            memory = psutil.virtual_memory()
+            memory_total = memory.total / (1024**3)  # GB
+            memory_available = memory.available / (1024**3)  # GB
+            memory_used = memory.used / (1024**3)  # GB
+            memory_percent = memory.percent
+            
+            # Get disk information
+            disk = psutil.disk_usage('/')
+            disk_total = disk.total / (1024**3)  # GB
+            disk_free = disk.free / (1024**3)  # GB
+            disk_used = disk.used / (1024**3)  # GB
+            disk_percent = (disk.used / disk.total) * 100
+            
+            # Get network interfaces
+            net_interfaces = list(psutil.net_if_addrs().keys())
+            
+            # Get environment information
+            python_version = sys.version.split()[0]
+            platform_info = platform.platform()
+            hostname = platform.node()
+            
+            return {
+                'cpu': {
+                    'count': cpu_count,
+                    'frequency': cpu_freq.current if cpu_freq else 0,
+                    'usage': cpu_usage
+                },
+                'memory': {
+                    'total': memory_total,
+                    'available': memory_available,
+                    'used': memory_used,
+                    'percent': memory_percent
+                },
+                'disk': {
+                    'total': disk_total,
+                    'free': disk_free,
+                    'used': disk_used,
+                    'percent': disk_percent
+                },
+                'network': {
+                    'interfaces': net_interfaces[:5]  # Show first 5 interfaces
+                },
+                'environment': {
+                    'python_version': python_version,
+                    'platform': platform_info,
+                    'hostname': hostname
+                }
+            }
+        except Exception as e:
+            return {'error': str(e)}
+            
+    def display_system_info(self):
+        """Display system information in a panel"""
+        try:
+            info = self.get_system_info()
+            
+            if 'error' in info:
+                return f"[red]Error getting system info: {info['error']}[/red]"
+            
+            # Format system info for display
+            cpu_info = f"[green]CPU:[/green] {info['cpu']['count']} cores @ {info['cpu']['frequency']:.1f}MHz ({info['cpu']['usage']:.1f}% usage)"
+            memory_info = f"[blue]RAM:[/blue] {info['memory']['used']:.1f}GB / {info['memory']['total']:.1f}GB ({info['memory']['percent']:.1f}% used)"
+            disk_info = f"[yellow]Disk:[/yellow] {info['disk']['used']:.1f}GB / {info['disk']['total']:.1f}GB ({info['disk']['percent']:.1f}% used)"
+            network_info = f"[cyan]Network:[/cyan] {', '.join(info['network']['interfaces'])}"
+            env_info = f"[magenta]System:[/magenta] {info['environment']['hostname']} | Python {info['environment']['python_version']}"
+            
+            system_panel = f"""
+{cpu_info}
+{memory_info}
+{disk_info}
+{network_info}
+{env_info}
+"""
+            return system_panel.strip()
+            
+        except Exception as e:
+            return f"[red]Error displaying system info: {e}[/red]"
+            
+    def get_asn_info(self, ip_address: str) -> Dict[str, Any]:
+        """Get ASN information for an IP address"""
+        try:
+            # Validate IP address
+            ipaddress.ip_address(ip_address)
+            
+            # Try to get ASN information from different sources
+            asn_info = {}
+            
+            # Method 1: Try ipinfo.io API
+            try:
+                response = requests.get(f"https://ipinfo.io/{ip_address}/json", timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    asn_info.update({
+                        'asn': data.get('org', 'Unknown'),
+                        'country': data.get('country', 'Unknown'),
+                        'region': data.get('region', 'Unknown'),
+                        'city': data.get('city', 'Unknown'),
+                        'timezone': data.get('timezone', 'Unknown'),
+                        'source': 'ipinfo.io'
+                    })
+            except Exception:
+                pass
+            
+            # Method 2: Try whois lookup for ASN
+            if not asn_info.get('asn'):
+                try:
+                    result = subprocess.run(['whois', ip_address], 
+                                          capture_output=True, text=True, timeout=10)
+                    if result.returncode == 0:
+                        whois_data = result.stdout.lower()
+                        
+                        # Extract ASN number
+                        for line in whois_data.split('\n'):
+                            if 'asn' in line or 'as' in line:
+                                if 'as' in line and any(char.isdigit() for char in line):
+                                    asn_info['asn'] = line.strip()
+                                    break
+                        
+                        # Extract organization
+                        for line in whois_data.split('\n'):
+                            if 'org' in line and ':' in line:
+                                asn_info['organization'] = line.split(':', 1)[1].strip()
+                                break
+                        
+                        asn_info['source'] = 'whois'
+                except Exception:
+                    pass
+            
+            # Method 3: Try reverse DNS lookup
+            try:
+                reverse_dns = socket.gethostbyaddr(ip_address)[0]
+                asn_info['reverse_dns'] = reverse_dns
+            except Exception:
+                asn_info['reverse_dns'] = 'No reverse DNS'
+            
+            return asn_info if asn_info else {'error': 'No ASN information found'}
+            
+        except Exception as e:
+            return {'error': f'Invalid IP address or lookup failed: {str(e)}'}
+    
+    def display_ip_info(self, ip_address: str) -> str:
+        """Display IP information including ASN data"""
+        try:
+            asn_info = self.get_asn_info(ip_address)
+            
+            if 'error' in asn_info:
+                return f"[red]ASN Info Error: {asn_info['error']}[/red]"
+            
+            info_lines = []
+            info_lines.append(f"[bold blue]🌐 IP Information for {ip_address}[/bold blue]")
+            
+            if asn_info.get('asn'):
+                info_lines.append(f"[green]ASN:[/green] {asn_info['asn']}")
+            
+            if asn_info.get('organization'):
+                info_lines.append(f"[yellow]Organization:[/yellow] {asn_info['organization']}")
+            
+            if asn_info.get('country'):
+                info_lines.append(f"[cyan]Country:[/cyan] {asn_info['country']}")
+            
+            if asn_info.get('region'):
+                info_lines.append(f"[magenta]Region:[/magenta] {asn_info['region']}")
+            
+            if asn_info.get('city'):
+                info_lines.append(f"[white]City:[/white] {asn_info['city']}")
+            
+            if asn_info.get('reverse_dns'):
+                info_lines.append(f"[blue]Reverse DNS:[/blue] {asn_info['reverse_dns']}")
+            
+            if asn_info.get('source'):
+                info_lines.append(f"[dim]Source: {asn_info['source']}[/dim]")
+            
+            return '\n'.join(info_lines)
+            
+        except Exception as e:
+            return f"[red]Error displaying IP info: {e}[/red]"
+        
     def display_main_menu(self):
         """Display the main menu"""
         self.clear_screen()
         display_banner()
+        
+        # Display system information
+        system_info = self.display_system_info()
+        system_panel = Panel.fit(
+            system_info,
+            title="📊 System Information",
+            border_style="blue",
+            padding=(0, 1)
+        )
+        console.print(system_panel)
+        console.print()
+        
+        # Display keyboard shortcuts info
+        shortcuts_info = """[bold cyan]Keyboard Shortcuts:[/bold cyan] [yellow]Ctrl+C[/yellow] = Stop scan | [yellow]Ctrl+Z[/yellow] = Pause/Resume scan"""
+        console.print(shortcuts_info)
+        console.print()
         
         menu_panel = Panel.fit(
             """
@@ -548,10 +804,12 @@ Ensure you have permission before scanning systems.
     def run_scan(self, targets: List[str], modules: List[str], config: Dict[str, Any]):
         """Execute a security scan with progress display"""
         self.scan_in_progress = True
+        self.scan_paused = False
         
         console.print(f"\n[bold green]🔍 Starting Scan[/bold green]")
         console.print(f"[blue]Targets: {', '.join(targets)}[/blue]")
         console.print(f"[blue]Modules: {', '.join(modules)}[/blue]")
+        console.print(f"[yellow]Keyboard Shortcuts: Ctrl+C = Stop, Ctrl+Z = Pause/Resume[/yellow]")
         
         # Initialize scanner
         self.scanner = SecurityScanner(
@@ -575,39 +833,77 @@ Ensure you have permission before scanning systems.
             with Progress() as progress:
                 task = progress.add_task("[cyan]Scanning...", total=len(targets))
                 
-                # Run scan in async context
+                # Enhanced scan execution with pause/resume and ASN info
                 def run_async_scan():
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     try:
-                        results = loop.run_until_complete(
-                            self.scanner.scan_network(targets, modules, **scan_kwargs)
-                        )
+                        results = {}
+                        
+                        # Scan each target individually for better control
+                        for i, target in enumerate(targets):
+                            # Check if scan should be stopped
+                            if not self.scan_in_progress:
+                                break
+                                
+                            # Handle pause state
+                            while self.scan_paused and self.scan_in_progress:
+                                time.sleep(0.5)
+                            
+                            # Display target information with ASN lookup
+                            console.print(f"\n[bold cyan]📡 Scanning target: {target}[/bold cyan]")
+                            
+                            # Show IP information if target is an IP
+                            try:
+                                ipaddress.ip_address(target)
+                                ip_info = self.display_ip_info(target)
+                                console.print(ip_info)
+                            except ValueError:
+                                # Not an IP address, try to resolve
+                                try:
+                                    resolved_ip = socket.gethostbyname(target)
+                                    console.print(f"[green]Resolved {target} to {resolved_ip}[/green]")
+                                    ip_info = self.display_ip_info(resolved_ip)
+                                    console.print(ip_info)
+                                except socket.gaierror:
+                                    console.print(f"[yellow]Could not resolve {target}[/yellow]")
+                            
+                            # Execute scan for this target
+                            target_results = loop.run_until_complete(
+                                self.scanner.scan_network([target], modules, **scan_kwargs)
+                            )
+                            results[target] = target_results
+                            
+                            # Update progress
+                            progress.update(task, advance=1)
+                            
+                            # Show live results
+                            if target_results:
+                                console.print(f"[green]✅ {target} scan completed[/green]")
+                        
                         return results
                     finally:
                         loop.close()
                 
                 # Run scan in separate thread to avoid blocking
-                scan_thread = threading.Thread(target=run_async_scan)
-                scan_thread.daemon = True
-                scan_thread.start()
-                
-                # Progress simulation (since we can't easily hook into actual progress)
-                for i in range(len(targets)):
-                    time.sleep(1)  # Simulate progress
-                    progress.update(task, advance=1)
+                self.scan_thread = threading.Thread(target=run_async_scan)
+                self.scan_thread.daemon = True
+                self.scan_thread.start()
                 
                 # Wait for scan to complete
-                scan_thread.join(timeout=300)  # 5 minute timeout
+                self.scan_thread.join(timeout=300)  # 5 minute timeout
                 
-                if scan_thread.is_alive():
+                if self.scan_thread.is_alive():
                     console.print("[red]Scan timed out![/red]")
                     return
                 
                 # Get results (this is a simplified approach)
                 results = {}  # In real implementation, we'd get this from the scan thread
             
-            console.print("\n[green]✅ Scan completed![/green]")
+            if self.scan_in_progress:
+                console.print("\n[green]✅ Scan completed![/green]")
+            else:
+                console.print("\n[yellow]⚠️  Scan stopped by user[/yellow]")
             
             # Save results
             self.current_scan_results = results
@@ -2349,6 +2645,7 @@ Select a scan set:
     def _execute_fast_ping(self, targets: List[str], config: Dict[str, Any]):
         """Execute fast ping scan with specialized logic"""
         console.print("\n[bold yellow]🔍 Fast Ping Scan Results[/bold yellow]")
+        console.print("[dim]Including ASN and reverse DNS information[/dim]")
         
         alive_hosts = []
         dead_hosts = []
@@ -2360,6 +2657,14 @@ Select a scan set:
                 for target in targets:
                     progress.update(task, advance=1)
                     
+                    # Check if scan should be stopped
+                    if not self.scan_in_progress:
+                        break
+                        
+                    # Handle pause state
+                    while self.scan_paused and self.scan_in_progress:
+                        time.sleep(0.5)
+                    
                     # Simulate fast ping (replace with actual ping logic)
                     try:
                         # Simple socket connect test for speed
@@ -2368,20 +2673,35 @@ Select a scan set:
                         sock.settimeout(config['timeout'])
                         
                         # Try to connect to common ports for quick test
+                        host_alive = False
                         for port in [80, 443, 22, 21, 23, 25, 53, 110, 143, 993, 995]:
                             try:
                                 result = sock.connect_ex((target, port))
                                 if result == 0:
-                                    alive_hosts.append(target)
+                                    host_alive = True
                                     break
                             except:
                                 continue
+                        
+                        if host_alive:
+                            alive_hosts.append(target)
+                            # Show live results with ASN info
+                            console.print(f"\n[bold green]✅ {target} - ALIVE[/bold green]")
+                            
+                            # Display ASN information
+                            try:
+                                ip_info = self.display_ip_info(target)
+                                console.print(ip_info)
+                            except Exception as e:
+                                console.print(f"[yellow]Could not get ASN info for {target}: {e}[/yellow]")
                         else:
                             dead_hosts.append(target)
+                            console.print(f"[red]❌ {target} - NOT RESPONDING[/red]")
                         
                         sock.close()
-                    except:
+                    except Exception as e:
                         dead_hosts.append(target)
+                        console.print(f"[red]❌ {target} - ERROR: {e}[/red]")
                 
                 # Display results
                 results_table = Table(title="Fast Ping Scan Results")
