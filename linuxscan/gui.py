@@ -41,9 +41,8 @@ from rich.table import Table
 from rich.text import Text
 from rich.live import Live
 from rich.layout import Layout
-# Removed unused imports: TaskID, Columns, Align, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
+from rich.progress import Progress
 from rich.prompt import Prompt, Confirm, IntPrompt
-# Removed unused imports: Columns, Align
 
 try:
     from .enhanced_scanner import SecurityScanner, display_banner
