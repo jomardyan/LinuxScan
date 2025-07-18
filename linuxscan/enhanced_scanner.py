@@ -273,7 +273,13 @@ class SecurityScanner:
         try:
             # Port scanning
             if 'port_scanner' in scan_modules:
-                port_results = await self.port_scanner.scan(host)
+                # Extract port scanner options from kwargs
+                port_scanner_kwargs = {
+                    'enable_service_detection': kwargs.get('enable_service_detection', False),
+                    'enable_os_detection': kwargs.get('enable_os_detection', False),
+                    'enable_banner_grabbing': kwargs.get('enable_banner_grabbing', False)
+                }
+                port_results = await self.port_scanner.scan(host, **port_scanner_kwargs)
                 host_results['scan_results']['port_scan'] = port_results
                 
                 # Use port scan results for other scanners

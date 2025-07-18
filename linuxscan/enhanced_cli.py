@@ -257,6 +257,14 @@ def display_detailed_results(results: Dict[str, Any], show_details: bool = False
               help='Enable SSH configuration audit (requires credentials)')
 @click.option('--ssh-credentials', type=str,
               help='SSH credentials in format "username:password" for config audit')
+@click.option('--enable-service-detection', is_flag=True,
+              help='Enable detailed service detection (slower but more thorough)')
+@click.option('--enable-os-detection', is_flag=True,
+              help='Enable OS detection (requires root privileges)')
+@click.option('--enable-banner-grabbing', is_flag=True,
+              help='Enable banner grabbing for open ports')
+@click.option('--advanced-scan', is_flag=True,
+              help='Enable all advanced features (service detection, OS detection, banner grabbing)')
 def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
          output: Optional[str], output_format: str, config: Optional[str],
          compliance: Optional[str], verbose: bool, quiet: bool, details: bool,
@@ -264,7 +272,8 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
          system_check: bool, auto_install: bool,
          ssh_brute_force: bool, ssh_usernames: Optional[str], ssh_passwords: Optional[str],
          ssh_max_attempts: int, ssh_delay: float, ssh_config_audit: bool,
-         ssh_credentials: Optional[str]):
+         ssh_credentials: Optional[str], enable_service_detection: bool,
+         enable_os_detection: bool, enable_banner_grabbing: bool, advanced_scan: bool):
     """
     LinuxScan - Comprehensive Linux Security Scanner
     
@@ -405,6 +414,19 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
             console.print(f"[green]Starting scan of {len(target_list)} targets[/green]")
             console.print(f"[blue]Using modules: {', '.join(module_list)}[/blue]")
         
+        # Enable advanced features if requested
+        if advanced_scan:
+            enable_service_detection = True
+            enable_os_detection = True
+            enable_banner_grabbing = True
+        
+        # Build scan options
+        scan_options = {
+            'enable_service_detection': enable_service_detection,
+            'enable_os_detection': enable_os_detection,
+            'enable_banner_grabbing': enable_banner_grabbing
+        }
+        
         # Build SSH scanning options
         ssh_kwargs = {}
         if ssh_brute_force:
@@ -422,6 +444,9 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
             if ssh_credentials:
                 username, password = ssh_credentials.split(':', 1)
                 ssh_kwargs['credentials'] = {'username': username, 'password': password}
+        
+        # Add scan options to kwargs
+        ssh_kwargs.update(scan_options)
         
         # Run scan
         results = asyncio.run(scanner.scan_network(target_list, module_list, **ssh_kwargs))
