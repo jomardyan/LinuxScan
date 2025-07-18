@@ -646,5 +646,10 @@ def web_scan(url: str, scan_type: str):
         console.print(f"[yellow]No web scan results found for {url}[/yellow]")
 
 
+def cli_main():
+    """Entry point for setuptools console script"""
+    main()
+
+
 if __name__ == '__main__':
     main()

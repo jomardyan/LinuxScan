@@ -62,8 +62,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "linuxscan=linuxscan.cli:cli_main",
-            "linux-security-scanner=linuxscan.cli:cli_main",
+            "linuxscan=linuxscan.enhanced_cli:cli_main",
+            "linux-security-scanner=linuxscan.enhanced_cli:cli_main",
         ],
     },
     include_package_data=True,

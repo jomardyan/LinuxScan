@@ -20,6 +20,8 @@ from .modules.forensics_scanner import ForensicsScanner
 from .modules.config_scanner import ConfigScanner
 from .modules.malware_scanner import MalwareScanner
 from .modules.database_scanner import DatabaseScanner
+from .modules.ssh_scanner import SSHScanner
+from .modules.system_check import SystemCheckModule
 from .modules.base_scanner import BaseScannerModule, scanner_registry
 
 __all__ = [
@@ -33,6 +35,8 @@ __all__ = [
     'ConfigScanner',
     'MalwareScanner',
     'DatabaseScanner',
+    'SSHScanner',
+    'SystemCheckModule',
     'BaseScannerModule',
     'scanner_registry'
 ]
