@@ -731,7 +731,10 @@ Select an option:
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="green")
         
-        for key, value in config.items():
+        # Convert ScanConfig object to dict using to_dict() method
+        config_dict = config.to_dict() if hasattr(config, 'to_dict') else config.__dict__
+        
+        for key, value in config_dict.items():
             if isinstance(value, dict):
                 table.add_row(key, json.dumps(value, indent=2))
             else:
@@ -846,7 +849,10 @@ Ensure you have permission before scanning systems.
                 task = progress.add_task("[cyan]Scanning...", total=len(targets))
                 
                 # Enhanced scan execution with pause/resume and ASN info
+                scan_results = {}
+                
                 def run_async_scan():
+                    nonlocal scan_results
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     try:
@@ -893,7 +899,7 @@ Ensure you have permission before scanning systems.
                             if target_results:
                                 console.print(f"[green]✅ {target} scan completed[/green]")
                         
-                        return results
+                        scan_results = results
                     finally:
                         loop.close()
                 
@@ -909,8 +915,8 @@ Ensure you have permission before scanning systems.
                     console.print("[red]Scan timed out![/red]")
                     return
                 
-                # Get results (this is a simplified approach)
-                results = {}  # In real implementation, we'd get this from the scan thread
+                # Get results from the scan thread
+                results = scan_results
             
             if self.scan_in_progress:
                 console.print("\n[green]✅ Scan completed![/green]")
@@ -944,25 +950,72 @@ Ensure you have permission before scanning systems.
         
         console.print("\n[bold cyan]📊 Scan Results Summary[/bold cyan]")
         
-        # This is a placeholder - in real implementation, we'd display actual results
-        summary_panel = Panel.fit(
-            """
+        # Display actual results if available
+        if isinstance(results, dict):
+            for target, target_results in results.items():
+                if target_results:
+                    console.print(f"\n[bold green]✅ Results for {target}[/bold green]")
+                    
+                    # Display scan module results
+                    if isinstance(target_results, dict):
+                        for module, module_results in target_results.items():
+                            if module_results:
+                                console.print(f"\n[bold yellow]🔍 {module.replace('_', ' ').title()}[/bold yellow]")
+                                
+                                # Display key findings
+                                if isinstance(module_results, dict):
+                                    if 'vulnerabilities' in module_results:
+                                        vuln_count = len(module_results['vulnerabilities'])
+                                        if vuln_count > 0:
+                                            console.print(f"[red]⚠️  {vuln_count} vulnerabilities found[/red]")
+                                    
+                                    if 'open_ports' in module_results:
+                                        port_count = len(module_results['open_ports'])
+                                        if port_count > 0:
+                                            console.print(f"[green]🔓 {port_count} open ports found[/green]")
+                                    
+                                    if 'live_hosts' in module_results:
+                                        host_count = len(module_results['live_hosts'])
+                                        if host_count > 0:
+                                            console.print(f"[blue]🖥️  {host_count} live hosts discovered[/blue]")
+                                    
+                                    if 'ssh_service' in module_results:
+                                        ssh_info = module_results['ssh_service']
+                                        if ssh_info.get('available'):
+                                            console.print(f"[green]🔑 SSH service detected[/green]")
+                                        else:
+                                            console.print(f"[yellow]🔑 SSH service not available[/yellow]")
+                                    
+                                    # Show error if any
+                                    if 'error' in module_results:
+                                        console.print(f"[red]❌ Error: {module_results['error']}[/red]")
+        
+        # Show actual scan results if they exist
+        has_results = False
+        if isinstance(results, dict):
+            for target, target_results in results.items():
+                if target_results and target_results != {}:
+                    has_results = True
+                    break
+        
+        if not has_results:
+            # Fall back to placeholder for empty results
+            summary_panel = Panel.fit(
+                """
 [bold green]Scan completed successfully![/bold green]
 
-[bold yellow]Results would be displayed here including:[/bold yellow]
-• Host discovery results
-• Open ports and services  
-• Identified vulnerabilities
-• Security recommendations
-• Compliance findings
+[bold yellow]No specific security findings detected, which could mean:[/bold yellow]
+• Targets may not be accessible or responsive
+• Services may be properly secured
+• Network filtering may be in place
+• Scan parameters may need adjustment
 
-[bold blue]For detailed results, check the exported file.[/bold blue]
-            """,
-            title="Scan Summary",
-            border_style="green"
-        )
-        
-        console.print(summary_panel)
+[bold blue]Consider running with different scan options or check network connectivity.[/bold blue]
+                """,
+                title="Scan Results",
+                border_style="green"
+            )
+            console.print(summary_panel)
     
     def mode_scan(self):
         """Mode scan - Interactive scan mode selection"""
@@ -2771,14 +2824,31 @@ Select a scan set:
         """Execute fast SSH scan with specialized logic"""
         console.print("\n[bold yellow]🔍 Fast SSH Scan Results[/bold yellow]")
         
+        # Parse targets to expand CIDR ranges
+        parsed_targets = []
+        for target in targets:
+            try:
+                # Check if it's a CIDR notation
+                if '/' in target:
+                    import ipaddress
+                    network = ipaddress.ip_network(target, strict=False)
+                    parsed_targets.extend([str(ip) for ip in network.hosts()])
+                else:
+                    parsed_targets.append(target)
+            except Exception as e:
+                console.print(f"[yellow]Warning: Could not parse target {target}: {e}[/yellow]")
+                parsed_targets.append(target)
+        
+        console.print(f"[blue]Scanning {len(parsed_targets)} hosts for SSH services[/blue]")
+        
         ssh_hosts = []
         no_ssh_hosts = []
         
         try:
             with Progress() as progress:
-                task = progress.add_task("[cyan]Scanning SSH services...", total=len(targets))
+                task = progress.add_task("[cyan]Scanning SSH services...", total=len(parsed_targets))
                 
-                for target in targets:
+                for target in parsed_targets:
                     progress.update(task, advance=1)
                     
                     # Fast SSH detection
