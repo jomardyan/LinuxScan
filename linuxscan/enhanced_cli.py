@@ -329,9 +329,22 @@ def main(targets: Optional[str], modules: str, timeout: int, max_workers: int,
     if not quiet:
         display_banner()
     
+    # Handle interactive mode without targets
+    if interactive and not targets and not system_check and not version and not list_modules and not help_extended:
+        console.print("[cyan]🚀 Launching LinuxScan Interactive Interface...[/cyan]")
+        try:
+            from .gui import LinuxScanGUI
+            gui = LinuxScanGUI()
+            gui.run()
+            return
+        except ImportError as e:
+            console.print(f"[red]Error loading GUI: {e}[/red]")
+            console.print("[yellow]GUI mode requires all dependencies to be installed[/yellow]")
+            sys.exit(1)
+    
     # Check if targets are required
-    if not targets and not system_check and not version and not list_modules and not help_extended:
-        console.print("[red]Error: TARGETS argument is required unless using --system-check, --version, --list-modules, or --help-extended[/red]")
+    if not targets and not system_check and not version and not list_modules and not help_extended and not interactive:
+        console.print("[red]Error: TARGETS argument is required unless using --interactive, --system-check, --version, --list-modules, or --help-extended[/red]")
         sys.exit(1)
 
     try:
