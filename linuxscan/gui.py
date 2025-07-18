@@ -78,11 +78,15 @@ class LinuxScanGUI:
 [bold green]19.[/bold green] Commands & Scripts Menu      [bold green]20.[/bold green] Configuration
 [bold green]21.[/bold green] Help & Documentation
 
+[bold white]🎯 SCAN SETS & FAST SCANS[/bold white]
+[bold green]22.[/bold green] Scan Sets Menu               [bold green]23.[/bold green] Fast Ping Scan
+[bold green]24.[/bold green] Fast SSH Scan
+
 [bold red]0.[/bold red] Exit
 
 Select an option:
             """,
-            title="🚀 LinuxScan Interactive Interface v2.0",
+            title="🚀 LinuxScan Interactive Interface v2.1",
             border_style="cyan",
             padding=(1, 2)
         )
@@ -94,7 +98,7 @@ Select an option:
         try:
             choice = IntPrompt.ask(
                 "Enter your choice",
-                choices=[str(i) for i in range(0, 22)],
+                choices=[str(i) for i in range(0, 25)],
                 default=1
             )
             return choice
@@ -2127,6 +2131,393 @@ Select option:
             console.print(f"[green]Results exported to {filename}[/green]")
         except Exception as e:
             console.print(f"[red]Failed to export results: {e}[/red]")
+
+    def run(self):
+        """Main GUI loop - handles menu navigation and user interaction"""
+        while True:
+            try:
+                self.display_main_menu()
+                choice = self.get_menu_choice()
+                
+                if choice == 0:
+                    console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+                    break
+                elif choice == 1:
+                    self.quick_scan()
+                elif choice == 2:
+                    self.advanced_scan()
+                elif choice == 3:
+                    self.mode_scan()
+                elif choice == 4:
+                    self.network_discovery()
+                elif choice == 5:
+                    self.vulnerability_assessment()
+                elif choice == 6:
+                    self.web_application_scan()
+                elif choice == 7:
+                    self.ssh_security_audit()
+                elif choice == 8:
+                    self.database_security_scan()
+                elif choice == 9:
+                    self.compliance_audit()
+                elif choice == 10:
+                    self.crypto_security_audit()
+                elif choice == 11:
+                    self.memory_analysis()
+                elif choice == 12:
+                    self.steganography_detection()
+                elif choice == 13:
+                    self.malware_analysis()
+                elif choice == 14:
+                    self.forensics_investigation()
+                elif choice == 15:
+                    self.traffic_analysis()
+                elif choice == 16:
+                    self.iot_device_scan()
+                elif choice == 17:
+                    self.system_check()
+                elif choice == 18:
+                    self.view_scan_history()
+                elif choice == 19:
+                    self.commands_and_scripts_menu()
+                elif choice == 20:
+                    self.configuration_menu()
+                elif choice == 21:
+                    self.help_and_documentation()
+                elif choice == 22:
+                    self.scan_sets_menu()
+                elif choice == 23:
+                    self.fast_ping_scan()
+                elif choice == 24:
+                    self.fast_ssh_scan()
+                    
+            except KeyboardInterrupt:
+                console.print("\n\n[bold red]Exiting LinuxScan...[/bold red]")
+                break
+            except Exception as e:
+                console.print(f"\n[bold red]An error occurred: {e}[/bold red]")
+                console.print("[yellow]Please try again or contact support.[/yellow]")
+                input("\nPress Enter to continue...")
+
+    def scan_sets_menu(self):
+        """Display scan sets menu with predefined scan combinations"""
+        console.print("\n[bold cyan]📋 Scan Sets Menu[/bold cyan]")
+        
+        scan_sets_panel = Panel.fit(
+            """
+[bold green]Predefined Scan Combinations[/bold green]
+
+[bold yellow]1.[/bold yellow] Basic Security Set        [dim](port + vulnerability scanning)[/dim]
+[bold yellow]2.[/bold yellow] Web Application Set       [dim](web + vulnerability + port scanning)[/dim]
+[bold yellow]3.[/bold yellow] Network Assessment Set    [dim](network + port + discovery)[/dim]
+[bold yellow]4.[/bold yellow] Red Team Set              [dim](ssh + vulnerability + web + port)[/dim]
+[bold yellow]5.[/bold yellow] Blue Team Set             [dim](malware + forensics + network + config)[/dim]
+[bold yellow]6.[/bold yellow] Compliance Set            [dim](config + vulnerability + database)[/dim]
+[bold yellow]7.[/bold yellow] Full Security Set         [dim](all major security modules)[/dim]
+[bold yellow]8.[/bold yellow] Quick Assessment Set      [dim](fast port + basic vulnerability)[/dim]
+[bold yellow]9.[/bold yellow] Deep Analysis Set         [dim](forensics + memory + malware + crypto)[/dim]
+[bold yellow]10.[/bold yellow] Infrastructure Set       [dim](network + iot + database + ssh)[/dim]
+
+[bold red]0.[/bold red] Back to Main Menu
+
+Select a scan set:
+            """,
+            title="🎯 Scan Sets",
+            border_style="cyan",
+            padding=(1, 2)
+        )
+        
+        console.print(scan_sets_panel)
+        
+        try:
+            choice = IntPrompt.ask(
+                "Enter choice",
+                choices=[str(i) for i in range(0, 11)],
+                default=0
+            )
+            
+            if choice == 0:
+                return
+            
+            targets = self.get_target_input()
+            if not targets:
+                return
+                
+            # Execute the selected scan set
+            self._execute_scan_set(choice, targets)
+            
+        except KeyboardInterrupt:
+            pass
+
+    def _execute_scan_set(self, set_number: int, targets: List[str]):
+        """Execute a predefined scan set"""
+        scan_sets = {
+            1: {  # Basic Security Set
+                'name': 'Basic Security Set',
+                'modules': ['port_scanner', 'vulnerability_scanner'],
+                'config': {'timeout': 10, 'max_workers': 30, 'verbose': False}
+            },
+            2: {  # Web Application Set
+                'name': 'Web Application Set',
+                'modules': ['web_scanner', 'vulnerability_scanner', 'port_scanner'],
+                'config': {'timeout': 15, 'max_workers': 20, 'verbose': True}
+            },
+            3: {  # Network Assessment Set
+                'name': 'Network Assessment Set',
+                'modules': ['network_scanner', 'port_scanner'],
+                'config': {'timeout': 8, 'max_workers': 50, 'verbose': False}
+            },
+            4: {  # Red Team Set
+                'name': 'Red Team Set',
+                'modules': ['ssh_scanner', 'vulnerability_scanner', 'web_scanner', 'port_scanner'],
+                'config': {'timeout': 12, 'max_workers': 25, 'verbose': True}
+            },
+            5: {  # Blue Team Set
+                'name': 'Blue Team Set',
+                'modules': ['malware_scanner', 'forensics_scanner', 'network_scanner', 'config_scanner'],
+                'config': {'timeout': 20, 'max_workers': 15, 'verbose': True}
+            },
+            6: {  # Compliance Set
+                'name': 'Compliance Set',
+                'modules': ['config_scanner', 'vulnerability_scanner', 'database_scanner'],
+                'config': {'timeout': 25, 'max_workers': 20, 'verbose': True}
+            },
+            7: {  # Full Security Set
+                'name': 'Full Security Set',
+                'modules': ['port_scanner', 'vulnerability_scanner', 'web_scanner', 'ssh_scanner', 'network_scanner', 'malware_scanner', 'config_scanner'],
+                'config': {'timeout': 30, 'max_workers': 20, 'verbose': True}
+            },
+            8: {  # Quick Assessment Set
+                'name': 'Quick Assessment Set',
+                'modules': ['port_scanner', 'vulnerability_scanner'],
+                'config': {'timeout': 5, 'max_workers': 50, 'verbose': False}
+            },
+            9: {  # Deep Analysis Set
+                'name': 'Deep Analysis Set',
+                'modules': ['forensics_scanner', 'memory_scanner', 'malware_scanner', 'crypto_scanner'],
+                'config': {'timeout': 45, 'max_workers': 10, 'verbose': True}
+            },
+            10: {  # Infrastructure Set
+                'name': 'Infrastructure Set',
+                'modules': ['network_scanner', 'iot_scanner', 'database_scanner', 'ssh_scanner'],
+                'config': {'timeout': 20, 'max_workers': 25, 'verbose': True}
+            }
+        }
+        
+        if set_number not in scan_sets:
+            console.print("[red]Invalid scan set selection![/red]")
+            return
+        
+        scan_set = scan_sets[set_number]
+        console.print(f"\n[bold green]🚀 Executing {scan_set['name']}[/bold green]")
+        console.print(f"[blue]Modules: {', '.join(scan_set['modules'])}[/blue]")
+        
+        # Ask if user wants to modify the configuration
+        modify_config = Confirm.ask("Modify default configuration?", default=False)
+        
+        if modify_config:
+            config = self.configure_scan_options()
+            # Merge with default config
+            scan_set['config'].update(config)
+        
+        self.run_scan(targets, scan_set['modules'], scan_set['config'])
+
+    def fast_ping_scan(self):
+        """Perform a very fast ping scan for host discovery"""
+        console.print("\n[bold green]⚡ Fast Ping Scan[/bold green]")
+        console.print("[dim]Ultra-fast host discovery and connectivity testing[/dim]")
+        
+        targets = self.get_target_input()
+        if not targets:
+            return
+        
+        console.print(f"\n[bold cyan]🏃 Starting Fast Ping Scan[/bold cyan]")
+        console.print(f"[blue]Targets: {', '.join(targets)}[/blue]")
+        
+        # Fast ping scan configuration
+        config = {
+            'timeout': 1,  # Very fast timeout
+            'max_workers': 100,  # High concurrency
+            'verbose': False,
+            'ping_only': True,
+            'fast_mode': True
+        }
+        
+        # Use a lightweight ping scanner approach
+        self._execute_fast_ping(targets, config)
+
+    def _execute_fast_ping(self, targets: List[str], config: Dict[str, Any]):
+        """Execute fast ping scan with specialized logic"""
+        console.print("\n[bold yellow]🔍 Fast Ping Scan Results[/bold yellow]")
+        
+        alive_hosts = []
+        dead_hosts = []
+        
+        try:
+            with Progress() as progress:
+                task = progress.add_task("[cyan]Pinging hosts...", total=len(targets))
+                
+                for target in targets:
+                    progress.update(task, advance=1)
+                    
+                    # Simulate fast ping (replace with actual ping logic)
+                    try:
+                        # Simple socket connect test for speed
+                        import socket
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(config['timeout'])
+                        
+                        # Try to connect to common ports for quick test
+                        for port in [80, 443, 22, 21, 23, 25, 53, 110, 143, 993, 995]:
+                            try:
+                                result = sock.connect_ex((target, port))
+                                if result == 0:
+                                    alive_hosts.append(target)
+                                    break
+                            except:
+                                continue
+                        else:
+                            dead_hosts.append(target)
+                        
+                        sock.close()
+                    except:
+                        dead_hosts.append(target)
+                
+                # Display results
+                results_table = Table(title="Fast Ping Scan Results")
+                results_table.add_column("Status", style="bold")
+                results_table.add_column("Host", style="cyan")
+                results_table.add_column("Response Time", style="green")
+                
+                for host in alive_hosts:
+                    results_table.add_row("✅ ALIVE", host, "< 1s")
+                
+                for host in dead_hosts:
+                    results_table.add_row("❌ DOWN", host, "timeout")
+                
+                console.print(results_table)
+                
+                # Summary
+                console.print(f"\n[bold green]📊 Summary:[/bold green]")
+                console.print(f"[green]• Alive hosts: {len(alive_hosts)}[/green]")
+                console.print(f"[red]• Down hosts: {len(dead_hosts)}[/red]")
+                console.print(f"[blue]• Total scanned: {len(targets)}[/blue]")
+                
+        except KeyboardInterrupt:
+            console.print("\n[red]Ping scan interrupted by user[/red]")
+        except Exception as e:
+            console.print(f"\n[red]Fast ping scan failed: {e}[/red]")
+        
+        input("\nPress Enter to continue...")
+
+    def fast_ssh_scan(self):
+        """Perform a very fast SSH scan for SSH service discovery"""
+        console.print("\n[bold green]🔑 Fast SSH Scan[/bold green]")
+        console.print("[dim]Ultra-fast SSH service discovery and banner grabbing[/dim]")
+        
+        targets = self.get_target_input()
+        if not targets:
+            return
+        
+        console.print(f"\n[bold cyan]🏃 Starting Fast SSH Scan[/bold cyan]")
+        console.print(f"[blue]Targets: {', '.join(targets)}[/blue]")
+        
+        # Fast SSH scan configuration
+        config = {
+            'timeout': 3,  # Fast timeout for SSH
+            'max_workers': 50,  # High concurrency
+            'verbose': False,
+            'ssh_only': True,
+            'fast_mode': True,
+            'banner_grab': True
+        }
+        
+        # Use a lightweight SSH scanner approach
+        self._execute_fast_ssh(targets, config)
+
+    def _execute_fast_ssh(self, targets: List[str], config: Dict[str, Any]):
+        """Execute fast SSH scan with specialized logic"""
+        console.print("\n[bold yellow]🔍 Fast SSH Scan Results[/bold yellow]")
+        
+        ssh_hosts = []
+        no_ssh_hosts = []
+        
+        try:
+            with Progress() as progress:
+                task = progress.add_task("[cyan]Scanning SSH services...", total=len(targets))
+                
+                for target in targets:
+                    progress.update(task, advance=1)
+                    
+                    # Fast SSH detection
+                    try:
+                        import socket
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(config['timeout'])
+                        
+                        # Try to connect to SSH port (22)
+                        result = sock.connect_ex((target, 22))
+                        if result == 0:
+                            # Try to get SSH banner
+                            banner = ""
+                            try:
+                                sock.settimeout(2)
+                                banner = sock.recv(1024).decode('utf-8').strip()
+                            except:
+                                banner = "SSH detected (no banner)"
+                            
+                            ssh_hosts.append({
+                                'host': target,
+                                'port': 22,
+                                'banner': banner,
+                                'status': 'open'
+                            })
+                        else:
+                            no_ssh_hosts.append(target)
+                        
+                        sock.close()
+                    except:
+                        no_ssh_hosts.append(target)
+                
+                # Display results
+                results_table = Table(title="Fast SSH Scan Results")
+                results_table.add_column("Status", style="bold")
+                results_table.add_column("Host", style="cyan")
+                results_table.add_column("Port", style="green")
+                results_table.add_column("SSH Banner", style="yellow")
+                
+                for ssh_info in ssh_hosts:
+                    results_table.add_row(
+                        "✅ SSH OPEN", 
+                        ssh_info['host'], 
+                        str(ssh_info['port']),
+                        ssh_info['banner'][:50] + "..." if len(ssh_info['banner']) > 50 else ssh_info['banner']
+                    )
+                
+                for host in no_ssh_hosts:
+                    results_table.add_row("❌ NO SSH", host, "22", "Service not available")
+                
+                console.print(results_table)
+                
+                # Summary
+                console.print(f"\n[bold green]📊 Summary:[/bold green]")
+                console.print(f"[green]• SSH available: {len(ssh_hosts)}[/green]")
+                console.print(f"[red]• No SSH: {len(no_ssh_hosts)}[/red]")
+                console.print(f"[blue]• Total scanned: {len(targets)}[/blue]")
+                
+                # Show SSH version analysis if available
+                if ssh_hosts:
+                    console.print(f"\n[bold cyan]🔍 SSH Version Analysis:[/bold cyan]")
+                    for ssh_info in ssh_hosts:
+                        if 'SSH' in ssh_info['banner']:
+                            console.print(f"[blue]• {ssh_info['host']}[/blue]: {ssh_info['banner']}")
+                
+        except KeyboardInterrupt:
+            console.print("\n[red]SSH scan interrupted by user[/red]")
+        except Exception as e:
+            console.print(f"\n[red]Fast SSH scan failed: {e}[/red]")
+        
+        input("\nPress Enter to continue...")
 
 
 def main():
