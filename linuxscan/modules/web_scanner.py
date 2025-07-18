@@ -709,7 +709,8 @@ class WebScanner(BaseScannerModule):
     
     def _detect_sql_error(self, content: str) -> bool:
         """Detect SQL error messages in response"""
-        sql_errors = [
+        # Simple string patterns
+        sql_error_strings = [
             'mysql_fetch_array',
             'mysql_fetch_assoc',
             'mysql_fetch_row',
@@ -717,7 +718,6 @@ class WebScanner(BaseScannerModule):
             'mysql_result',
             'mysql_select_db',
             'mysql_query',
-            'ORA-[0-9]+',
             'Microsoft OLE DB Provider',
             'ODBC Microsoft Access Driver',
             'ODBC SQL Server Driver',
@@ -725,12 +725,24 @@ class WebScanner(BaseScannerModule):
             'PostgreSQL query failed',
             'Warning: pg_',
             'valid PostgreSQL result',
-            'Npgsql\\.'
+        ]
+        
+        # Regex patterns
+        sql_error_patterns = [
+            r'ORA-[0-9]+',
+            r'Npgsql\.',
         ]
         
         content_lower = content.lower()
-        for error in sql_errors:
+        
+        # Check string patterns
+        for error in sql_error_strings:
             if error.lower() in content_lower:
+                return True
+        
+        # Check regex patterns
+        for pattern in sql_error_patterns:
+            if re.search(pattern, content, re.IGNORECASE):
                 return True
         
         return False
@@ -827,17 +839,25 @@ class WebScanner(BaseScannerModule):
         
         content_lower = content.lower()
         
-        # Detect programming languages
-        if 'php' in content_lower or '.php' in content_lower:
+        # Check headers for programming languages
+        x_powered_by = headers.get('X-Powered-By', '').lower()
+        if 'php' in x_powered_by:
             technologies['programming_language'] = 'PHP'
-        elif 'asp.net' in content_lower or 'aspx' in content_lower:
+        elif 'asp.net' in x_powered_by:
             technologies['programming_language'] = 'ASP.NET'
-        elif 'jsp' in content_lower or 'java' in content_lower:
-            technologies['programming_language'] = 'Java'
-        elif 'python' in content_lower or 'django' in content_lower:
-            technologies['programming_language'] = 'Python'
-        elif 'ruby' in content_lower or 'rails' in content_lower:
-            technologies['programming_language'] = 'Ruby'
+        
+        # Detect programming languages from content
+        if technologies['programming_language'] == 'Unknown':
+            if 'php' in content_lower or '.php' in content_lower:
+                technologies['programming_language'] = 'PHP'
+            elif 'asp.net' in content_lower or 'aspx' in content_lower:
+                technologies['programming_language'] = 'ASP.NET'
+            elif 'jsp' in content_lower or 'java' in content_lower:
+                technologies['programming_language'] = 'Java'
+            elif 'python' in content_lower or 'django' in content_lower:
+                technologies['programming_language'] = 'Python'
+            elif 'ruby' in content_lower or 'rails' in content_lower:
+                technologies['programming_language'] = 'Ruby'
         
         # Detect frameworks
         if 'wordpress' in content_lower or 'wp-content' in content_lower:
