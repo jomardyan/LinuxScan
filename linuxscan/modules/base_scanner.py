@@ -4,6 +4,7 @@ Base scanner class for all security scanning modules
 
 import asyncio
 import logging
+import socket
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -45,11 +46,47 @@ class BaseScannerModule(ABC):
     def validate_target(self, target: str) -> bool:
         """Validate if target is reachable"""
         try:
-            import socket
             socket.gethostbyname(target)
             return True
         except socket.gaierror:
             return False
+    
+    def get_reverse_dns(self, ip: str) -> Optional[str]:
+        """Get reverse DNS lookup for an IP address"""
+        try:
+            hostname, _, _ = socket.gethostbyaddr(ip)
+            return hostname
+        except socket.herror:
+            return None
+        except Exception:
+            return None
+    
+    def enhance_target_info(self, target: str) -> Dict[str, Any]:
+        """Enhance target information with reverse DNS and validation"""
+        target_info = {
+            'target': target,
+            'timestamp': datetime.now().isoformat(),
+            'reverse_dns': None,
+            'resolved_ip': None,
+            'is_reachable': False
+        }
+        
+        try:
+            # Resolve hostname to IP
+            resolved_ip = socket.gethostbyname(target)
+            target_info['resolved_ip'] = resolved_ip
+            target_info['is_reachable'] = True
+            
+            # Get reverse DNS if target is already an IP
+            if target == resolved_ip:
+                target_info['reverse_dns'] = self.get_reverse_dns(target)
+            else:
+                target_info['reverse_dns'] = self.get_reverse_dns(resolved_ip)
+                
+        except socket.gaierror:
+            target_info['is_reachable'] = False
+            
+        return target_info
     
     def get_severity_score(self, findings: List[str]) -> int:
         """Calculate severity score based on findings"""

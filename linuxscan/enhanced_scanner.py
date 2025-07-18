@@ -50,6 +50,11 @@ try:
     from .modules.database_scanner import DatabaseScanner
     from .modules.ssh_scanner import SSHScanner
     from .modules.system_check import SystemCheckModule
+    from .modules.crypto_scanner import CryptoSecurityScanner
+    from .modules.memory_scanner import MemoryAnalysisScanner
+    from .modules.steganography_scanner import SteganographyScanner
+    from .modules.iot_scanner import IoTDeviceScanner
+    from .modules.traffic_scanner import TrafficAnalysisScanner
     from .modules.base_scanner import scanner_registry
 except ImportError:
     # Fallback for direct execution
@@ -65,6 +70,11 @@ except ImportError:
     from modules.database_scanner import DatabaseScanner
     from modules.ssh_scanner import SSHScanner
     from modules.system_check import SystemCheckModule
+    from modules.crypto_scanner import CryptoSecurityScanner
+    from modules.memory_scanner import MemoryAnalysisScanner
+    from modules.steganography_scanner import SteganographyScanner
+    from modules.iot_scanner import IoTDeviceScanner
+    from modules.traffic_scanner import TrafficAnalysisScanner
     from modules.base_scanner import scanner_registry
 
 # Console instance for rich output
@@ -121,6 +131,11 @@ class SecurityScanner:
         self.malware_scanner = MalwareScanner(timeout=timeout)
         self.database_scanner = DatabaseScanner(timeout=timeout)
         self.ssh_scanner = SSHScanner(timeout=timeout)
+        self.crypto_scanner = CryptoSecurityScanner(timeout=timeout)
+        self.memory_scanner = MemoryAnalysisScanner(timeout=timeout)
+        self.steganography_scanner = SteganographyScanner(timeout=timeout)
+        self.iot_scanner = IoTDeviceScanner(timeout=timeout)
+        self.traffic_scanner = TrafficAnalysisScanner(timeout=timeout)
         self.system_check = SystemCheckModule()
         
         # Register scanners
@@ -133,7 +148,31 @@ class SecurityScanner:
         scanner_registry.register('malware_scanner', MalwareScanner)
         scanner_registry.register('database_scanner', DatabaseScanner)
         scanner_registry.register('ssh_scanner', SSHScanner)
+        scanner_registry.register('crypto_scanner', CryptoSecurityScanner)
+        scanner_registry.register('memory_scanner', MemoryAnalysisScanner)
+        scanner_registry.register('steganography_scanner', SteganographyScanner)
+        scanner_registry.register('iot_scanner', IoTDeviceScanner)
+        scanner_registry.register('traffic_scanner', TrafficAnalysisScanner)
         scanner_registry.register('system_check', SystemCheckModule)
+        
+        # Create modules dictionary for easy access
+        self.modules = {
+            'port_scanner': self.port_scanner,
+            'vulnerability_scanner': self.vulnerability_scanner,
+            'network_scanner': self.network_scanner,
+            'web_scanner': self.web_scanner,
+            'forensics_scanner': self.forensics_scanner,
+            'config_scanner': self.config_scanner,
+            'malware_scanner': self.malware_scanner,
+            'database_scanner': self.database_scanner,
+            'ssh_scanner': self.ssh_scanner,
+            'crypto_scanner': self.crypto_scanner,
+            'memory_scanner': self.memory_scanner,
+            'steganography_scanner': self.steganography_scanner,
+            'iot_scanner': self.iot_scanner,
+            'traffic_scanner': self.traffic_scanner,
+            'system_check': self.system_check
+        }
         
     def parse_targets(self, targets: List[str]) -> List[str]:
         """Parse and validate target list"""

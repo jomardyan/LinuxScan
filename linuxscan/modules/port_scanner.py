@@ -72,8 +72,14 @@ class PortScanner(BaseScannerModule):
         """
         self.log_scan_start(target)
         
-        if not self.validate_target(target):
-            return {"error": f"Target {target} is unreachable"}
+        # Enhanced target info with reverse DNS
+        target_info = self.enhance_target_info(target)
+        
+        if not target_info['is_reachable']:
+            return {
+                "error": f"Target {target} is unreachable",
+                "target_info": target_info
+            }
         
         # Default port ranges - focus on common ports for faster scanning
         if ports is None:
@@ -84,6 +90,7 @@ class PortScanner(BaseScannerModule):
         
         results = {
             'target': target,
+            'target_info': target_info,
             'scan_type': scan_type,
             'timestamp': datetime.now().isoformat(),
             'open_ports': {},

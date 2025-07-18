@@ -43,6 +43,11 @@ SCAN_MODULES = {
     'database_scanner': 'Database security assessment',
     'forensics_scanner': 'Digital forensics and analysis',
     'ssh_scanner': 'SSH security testing and red team assessment',
+    'crypto_scanner': 'Cryptographic security assessment',
+    'memory_scanner': 'Memory forensics and analysis',
+    'steganography_scanner': 'Steganography detection and analysis',
+    'iot_scanner': 'IoT device discovery and security assessment',
+    'traffic_scanner': 'Network traffic analysis and monitoring',
     'system_check': 'System dependency and component verification'
 }
 
