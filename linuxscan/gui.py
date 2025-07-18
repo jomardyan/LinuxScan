@@ -742,43 +742,118 @@ Select an option:
         self.remove_navigation_breadcrumb()
     
     def vulnerability_assessment(self):
-        """Perform comprehensive vulnerability assessment"""
+        """Perform comprehensive vulnerability assessment with enhanced navigation"""
         console.print("\n[bold green]🛡️ Vulnerability Assessment[/bold green]")
+        self.add_navigation_breadcrumb("Vulnerability Assessment")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
             
         modules = ['vulnerability_scanner', 'web_scanner', 'config_scanner']
         config = {'timeout': 10, 'max_workers': 30, 'verbose': True}
         
         self.run_scan(targets, modules, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Vulnerability Assessment")
+        
+        if choice == "1":
+            if self.current_scan_results:
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.vulnerability_assessment()  # Recursive call
+            return
+        elif choice == "3":
+            self.export_scan_results()
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
     def network_discovery(self):
-        """Perform network discovery"""
+        """Perform network discovery with enhanced navigation"""
         console.print("\n[bold green]🌐 Network Discovery[/bold green]")
+        self.add_navigation_breadcrumb("Network Discovery")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
             
         modules = ['port_scanner', 'network_scanner']
         config = {'timeout': 3, 'max_workers': 100, 'verbose': False}
         
         self.run_scan(targets, modules, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Network Discovery")
+        
+        if choice == "1":
+            if self.current_scan_results:
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.network_discovery()  # Recursive call
+            return
+        elif choice == "3":
+            self.export_scan_results()
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
     def web_application_scan(self):
-        """Perform web application security scan"""
+        """Perform web application security scan with enhanced navigation"""
         console.print("\n[bold green]🌍 Web Application Scan[/bold green]")
+        self.add_navigation_breadcrumb("Web Application Scan")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
             
         modules = ['web_scanner', 'vulnerability_scanner']
         config = {'timeout': 15, 'max_workers': 20, 'verbose': True}
         
         self.run_scan(targets, modules, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Web Application Scan")
+        
+        if choice == "1":
+            if self.current_scan_results:
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.web_application_scan()  # Recursive call
+            return
+        elif choice == "3":
+            self.export_scan_results()
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
     def ssh_security_audit(self):
         """Perform SSH security audit"""
@@ -857,8 +932,9 @@ Select an option:
         self.run_scan(targets, modules, config)
     
     def system_check(self):
-        """Perform system dependency check"""
+        """Perform system dependency check with enhanced navigation"""
         console.print("\n[bold green]🔍 System Check[/bold green]")
+        self.add_navigation_breadcrumb("System Check")
         
         from linuxscan.modules.system_check import SystemCheckModule
         
@@ -898,18 +974,156 @@ Select an option:
         except Exception as e:
             console.print(f"[red]System check failed: {e}[/red]")
         
-        input("\nPress Enter to continue...")
+        # Show post-action menu
+        console.print("\n[bold cyan]System Check Options:[/bold cyan]")
+        
+        post_check_panel = Panel.fit(
+            """
+[bold cyan]What would you like to do next?[/bold cyan]
+
+[bold green]1.[/bold green] Run system check again
+[bold green]2.[/bold green] Install missing dependencies
+[bold green]3.[/bold green] View system information
+[bold green]4.[/bold green] Return to main menu
+[bold green]5.[/bold green] Exit LinuxScan
+
+[bold yellow]Or press Enter to continue...[/bold yellow]
+            """,
+            title="🔍 System Check Options",
+            border_style="green",
+            padding=(1, 2)
+        )
+        
+        console.print(post_check_panel)
+        
+        choice = self.enhanced_input(
+            "Select option",
+            choices=["1", "2", "3", "4", "5", ""],
+            default=""
+        )
+        
+        if choice == "1":
+            self.remove_navigation_breadcrumb()
+            self.system_check()  # Recursive call
+            return
+        elif choice == "2":
+            # Try to install dependencies
+            console.print("\n[yellow]🔧 Installing dependencies...[/yellow]")
+            try:
+                system_checker = SystemCheckModule()
+                results = asyncio.run(system_checker.scan(auto_install=True))
+                console.print("[green]✅ Dependencies installation attempted[/green]")
+            except Exception as e:
+                console.print(f"[red]❌ Installation failed: {e}[/red]")
+            input("\nPress Enter to continue...")
+        elif choice == "3":
+            system_info = self.display_system_info()
+            console.print(system_info)
+            input("\nPress Enter to continue...")
+        elif choice == "4":
+            self.return_to_main_menu = True
+        elif choice == "5":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
     
     def view_scan_history(self):
-        """View previous scan results"""
+        """View previous scan results with enhanced navigation"""
         console.print("\n[bold green]📊 Scan History[/bold green]")
+        self.add_navigation_breadcrumb("Scan History")
         
         if self.current_scan_results:
             self.display_scan_results(self.current_scan_results)
+            
+            # Show scan history options
+            console.print("\n[bold cyan]Scan History Options:[/bold cyan]")
+            
+            history_panel = Panel.fit(
+                """
+[bold cyan]What would you like to do with scan results?[/bold cyan]
+
+[bold green]1.[/bold green] View detailed results
+[bold green]2.[/bold green] Export results to file
+[bold green]3.[/bold green] Compare with previous scans
+[bold green]4.[/bold green] Clear scan history
+[bold green]5.[/bold green] Return to main menu
+
+[bold yellow]Or press Enter to continue...[/bold yellow]
+                """,
+                title="📊 Scan History Options",
+                border_style="cyan",
+                padding=(1, 2)
+            )
+            
+            console.print(history_panel)
+            
+            choice = self.enhanced_input(
+                "Select option",
+                choices=["1", "2", "3", "4", "5", ""],
+                default=""
+            )
+            
+            if choice == "1":
+                self.display_scan_results(self.current_scan_results)
+                input("\nPress Enter to continue...")
+            elif choice == "2":
+                self.export_scan_results()
+            elif choice == "3":
+                console.print("[yellow]Scan comparison feature coming soon![/yellow]")
+                input("\nPress Enter to continue...")
+            elif choice == "4":
+                if Confirm.ask("Clear scan history?", default=False):
+                    self.current_scan_results = None
+                    console.print("[green]✅ Scan history cleared[/green]")
+                input("\nPress Enter to continue...")
+            elif choice == "5":
+                self.return_to_main_menu = True
         else:
             console.print("[yellow]No scan results available in current session[/yellow]")
             
-        input("\nPress Enter to continue...")
+            # Show options even without results
+            console.print("\n[bold cyan]Options:[/bold cyan]")
+            
+            no_results_panel = Panel.fit(
+                """
+[bold cyan]No scan results available. What would you like to do?[/bold cyan]
+
+[bold green]1.[/bold green] Run a quick scan
+[bold green]2.[/bold green] Run an advanced scan
+[bold green]3.[/bold green] Load saved results (coming soon)
+[bold green]4.[/bold green] Return to main menu
+
+[bold yellow]Or press Enter to continue...[/bold yellow]
+                """,
+                title="📊 No Scan Results",
+                border_style="yellow",
+                padding=(1, 2)
+            )
+            
+            console.print(no_results_panel)
+            
+            choice = self.enhanced_input(
+                "Select option",
+                choices=["1", "2", "3", "4", ""],
+                default=""
+            )
+            
+            if choice == "1":
+                self.remove_navigation_breadcrumb()
+                self.quick_scan()
+                return
+            elif choice == "2":
+                self.remove_navigation_breadcrumb()
+                self.advanced_scan()
+                return
+            elif choice == "3":
+                console.print("[yellow]Load saved results feature coming soon![/yellow]")
+                input("\nPress Enter to continue...")
+            elif choice == "4":
+                self.return_to_main_menu = True
+        
+        self.remove_navigation_breadcrumb()
     
     def configuration_menu(self):
         """Configuration management menu"""
@@ -2987,12 +3201,14 @@ Select a scan set:
         self.run_scan(targets, scan_set['modules'], scan_set['config'])
 
     def fast_ping_scan(self):
-        """Perform a very fast ping scan for host discovery"""
+        """Perform a very fast ping scan for host discovery with enhanced navigation"""
         console.print("\n[bold green]⚡ Fast Ping Scan[/bold green]")
         console.print("[dim]Ultra-fast host discovery and connectivity testing[/dim]")
+        self.add_navigation_breadcrumb("Fast Ping Scan")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
         
         console.print(f"\n[bold cyan]🏃 Starting Fast Ping Scan[/bold cyan]")
@@ -3009,6 +3225,29 @@ Select a scan set:
         
         # Use a lightweight ping scanner approach
         self._execute_fast_ping(targets, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Fast Ping Scan")
+        
+        if choice == "1":
+            console.print("[yellow]Fast ping scan results already displayed above[/yellow]")
+            input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.fast_ping_scan()  # Recursive call
+            return
+        elif choice == "3":
+            console.print("[yellow]Fast ping results export coming soon![/yellow]")
+            input("\nPress Enter to continue...")
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
 
     def _execute_fast_ping(self, targets: List[str], config: Dict[str, Any]):
         """Execute fast ping scan with specialized logic"""
@@ -3095,16 +3334,16 @@ Select a scan set:
             console.print("\n[red]Ping scan interrupted by user[/red]")
         except Exception as e:
             console.print(f"\n[red]Fast ping scan failed: {e}[/red]")
-        
-        input("\nPress Enter to continue...")
 
     def fast_ssh_scan(self):
-        """Perform a very fast SSH scan for SSH service discovery"""
+        """Perform a very fast SSH scan for SSH service discovery with enhanced navigation"""
         console.print("\n[bold green]🔑 Fast SSH Scan[/bold green]")
         console.print("[dim]Ultra-fast SSH service discovery and banner grabbing[/dim]")
+        self.add_navigation_breadcrumb("Fast SSH Scan")
         
         targets = self.get_target_input()
-        if not targets:
+        if not targets or self.return_to_main_menu:
+            self.remove_navigation_breadcrumb()
             return
         
         console.print(f"\n[bold cyan]🏃 Starting Fast SSH Scan[/bold cyan]")
@@ -3122,6 +3361,29 @@ Select a scan set:
         
         # Use a lightweight SSH scanner approach
         self._execute_fast_ssh(targets, config)
+        
+        # Show post-scan menu
+        choice = self.show_post_scan_menu("Fast SSH Scan")
+        
+        if choice == "1":
+            console.print("[yellow]Fast SSH scan results already displayed above[/yellow]")
+            input("\nPress Enter to continue...")
+        elif choice == "2":
+            self.remove_navigation_breadcrumb()
+            self.fast_ssh_scan()  # Recursive call
+            return
+        elif choice == "3":
+            console.print("[yellow]Fast SSH results export coming soon![/yellow]")
+            input("\nPress Enter to continue...")
+        elif choice == "4":
+            pass  # Stay in current menu context
+        elif choice == "5":
+            self.return_to_main_menu = True
+        elif choice == "6":
+            console.print("\n[bold green]Thank you for using LinuxScan! 👋[/bold green]")
+            sys.exit(0)
+        
+        self.remove_navigation_breadcrumb()
 
     def _execute_fast_ssh(self, targets: List[str], config: Dict[str, Any]):
         """Execute fast SSH scan with specialized logic"""
@@ -3221,8 +3483,6 @@ Select a scan set:
             console.print("\n[red]SSH scan interrupted by user[/red]")
         except Exception as e:
             console.print(f"\n[red]Fast SSH scan failed: {e}[/red]")
-        
-        input("\nPress Enter to continue...")
 
 
 def main():
