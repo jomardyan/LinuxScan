@@ -22,7 +22,7 @@ import asyncio
 import ssl
 import socket
 import hashlib
-import hmac
+# Removed unused import: hmac
 import base64
 import subprocess
 from typing import Dict, List, Any, Optional, Tuple

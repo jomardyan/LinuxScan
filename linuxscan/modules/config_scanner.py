@@ -19,7 +19,7 @@ Configuration and compliance scanner
 
 import asyncio
 import json
-import yaml
+# Removed unused import: yaml
 import os
 import re
 from typing import Dict, List, Any, Optional

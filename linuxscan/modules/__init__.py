@@ -27,6 +27,19 @@ from .malware_scanner import MalwareScanner
 from .database_scanner import DatabaseScanner
 from .ssh_scanner import SSHScanner
 from .system_check import SystemCheckModule
+from .base_scanner import scanner_registry
+
+# Register scanners
+scanner_registry.register('port_scanner', PortScanner)
+scanner_registry.register('vulnerability_scanner', VulnerabilityScanner)
+scanner_registry.register('network_scanner', NetworkScanner)
+scanner_registry.register('web_scanner', WebScanner)
+scanner_registry.register('forensics_scanner', ForensicsScanner)
+scanner_registry.register('config_scanner', ConfigScanner)
+scanner_registry.register('malware_scanner', MalwareScanner)
+scanner_registry.register('database_scanner', DatabaseScanner)
+scanner_registry.register('ssh_scanner', SSHScanner)
+scanner_registry.register('system_check', SystemCheckModule)
 
 __all__ = [
     'PortScanner',
@@ -38,5 +51,6 @@ __all__ = [
     'MalwareScanner',
     'DatabaseScanner',
     'SSHScanner',
-    'SystemCheckModule'
+    'SystemCheckModule',
+    'scanner_registry'
 ]

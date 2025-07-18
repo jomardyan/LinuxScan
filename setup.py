@@ -18,17 +18,46 @@
 Setup configuration for Linux Security Scanner
 """
 
+import sys
 from setuptools import setup, find_packages
 from pathlib import Path
+from rich.console import Console
+
+# If no arguments provided, launch GUI setup
+if len(sys.argv) == 1:
+    console = Console()
+    console.print("🚀 Launching LinuxScan Interactive Setup...")
+    try:
+        # Add the project root to Python path for imports
+        project_root = Path(__file__).parent
+        sys.path.insert(0, str(project_root))
+        
+        from linuxscan.gui import LinuxScanGUI
+        gui = LinuxScanGUI()
+        gui.run()
+        sys.exit(0)
+    except ImportError as e:
+        console.print(f"[red]Error loading GUI: {e}[/red]")
+        console.print("[yellow]GUI mode requires all dependencies to be installed[/yellow]")
+        console.print("[cyan]Install dependencies first:[/cyan]")
+        console.print("  pip install -r requirements.txt")
+        console.print("\n[cyan]Or run setup with a command:[/cyan]")
+        console.print("  python setup.py install")
+        console.print("  python setup.py develop")
+        console.print("  python setup.py --help")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]Error launching GUI: {e}[/red]")
+        console.print("[yellow]Falling back to standard setup usage...[/yellow]")
+        console.print("[cyan]Available commands:[/cyan]")
+        console.print("  python setup.py install")
+        console.print("  python setup.py develop")
+        console.print("  python setup.py --help")
+        sys.exit(1)
 
 # Read the contents of README file
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
-
-# Read requirements
-requirements = []
-with open('requirements.txt', 'r') as f:
-    requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 setup(
     name="linuxscan",
@@ -38,6 +67,7 @@ setup(
     description="High-performance security scanning tool for remote Linux servers",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    license="Apache-2.0",
     url="https://github.com/jomardyan/LinuxScan",
     project_urls={
         "Bug Tracker": "https://github.com/jomardyan/LinuxScan/issues",
@@ -52,7 +82,6 @@ setup(
         "Topic :: System :: Systems Administration",
         "Topic :: Security",
         "Topic :: System :: Networking :: Monitoring",
-        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -64,17 +93,6 @@ setup(
         "Environment :: Console",
     ],
     python_requires=">=3.7",
-    install_requires=requirements,
-    extras_require={
-        "dev": [
-            "pytest>=6.0",
-            "pytest-asyncio>=0.18.0",
-            "pytest-cov>=3.0.0",
-            "black>=22.0.0",
-            "flake8>=4.0.0",
-            "mypy>=0.950",
-        ],
-    },
     entry_points={
         "console_scripts": [
             "linuxscan=linuxscan.enhanced_cli:cli_main",

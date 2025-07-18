@@ -333,7 +333,7 @@ class TestUtilityFunctions:
         """Test banner display"""
         from linuxscan.enhanced_scanner import display_banner
         
-        with patch('linuxscan.scanner.console') as mock_console:
+        with patch('linuxscan.enhanced_scanner.console') as mock_console:
             display_banner()
             mock_console.print.assert_called_once()
     
@@ -341,7 +341,7 @@ class TestUtilityFunctions:
         """Test help display"""
         from linuxscan.enhanced_scanner import display_help
         
-        with patch('linuxscan.scanner.console') as mock_console:
+        with patch('linuxscan.enhanced_scanner.console') as mock_console:
             display_help()
             mock_console.print.assert_called_once()
 

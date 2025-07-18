@@ -23,14 +23,14 @@ import subprocess
 import shutil
 import importlib
 import platform
-import getpass
+# Removed unused import: getpass
 from typing import Dict, List, Tuple, Optional, Any
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.text import Text
-import pkg_resources
+# Removed unused import: pkg_resources
 from .base_scanner import BaseScannerModule
 
 console = Console()
