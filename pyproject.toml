@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linuxscan"
+version = "1.0.0"
+description = "High-performance security scanning tool for remote Linux servers"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Security Scanner Team", email = "contact@linuxscan.dev"}
+]
+maintainers = [
+    {name = "Security Scanner Team", email = "contact@linuxscan.dev"}
+]
+keywords = [
+    "security", "scanner", "linux", "network", "vulnerability", 
+    "assessment", "pentesting", "security-audit", "port-scanner",
+    "ssl", "ssh", "security-testing"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "rich>=13.7.0",
+    "click>=8.1.7",
+    "python-nmap>=0.7.1",
+    "paramiko>=3.4.0",
+    "cryptography>=41.0.7",
+    "aiohttp>=3.9.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-asyncio>=0.18.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jomardyan/LinuxScan"
+"Bug Tracker" = "https://github.com/jomardyan/LinuxScan/issues"
+"Documentation" = "https://github.com/jomardyan/LinuxScan#readme"
+"Source Code" = "https://github.com/jomardyan/LinuxScan"
+
+[project.scripts]
+linuxscan = "linuxscan.cli:cli_main"
+linux-security-scanner = "linuxscan.cli:cli_main"
+
+[tool.setuptools]
+packages = ["linuxscan"]
+
+[tool.setuptools.package-data]
+linuxscan = ["*.md", "*.txt"]
+
+[tool.black]
+line-length = 88
+target-version = ['py37', 'py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+per-file-ignores = [
+    "__init__.py:F401",
+]

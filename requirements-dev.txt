@@ -1,0 +1,9 @@
+# Development dependencies for Linux Security Scanner
+pytest>=6.0
+pytest-asyncio>=0.18.0
+pytest-cov>=3.0.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.950
+build>=0.8.0
+twine>=4.0.0

@@ -1,6 +1,37 @@
+# Core dependencies
 rich>=13.7.0
 click>=8.1.7
 python-nmap>=0.7.1
 paramiko>=3.4.0
 cryptography>=41.0.7
 aiohttp>=3.9.1
+
+# Security scanning dependencies
+beautifulsoup4>=4.12.0
+scapy>=2.5.0
+netaddr>=0.10.0
+dnspython>=2.4.0
+pyyaml>=6.0.1
+yara-python>=4.3.0
+
+# Database dependencies (optional)
+mysql-connector-python>=8.0.33
+psycopg2-binary>=2.9.7
+pymongo>=4.5.0
+redis>=5.0.0
+
+# Web scanning dependencies
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Forensics dependencies
+volatility3>=2.5.0
+python-magic>=0.4.27
+
+# Network analysis dependencies
+netifaces>=0.11.0
+python-whois>=0.8.0
+
+# Development dependencies (optional)
+# Install with: pip install -r requirements.txt -r requirements-dev.txt
+# or: pip install ".[dev]"
